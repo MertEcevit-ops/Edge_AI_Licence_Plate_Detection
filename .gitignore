@@ -1,0 +1,33 @@
+# -----------------------------
+# Build Çıktıları (Derleme Dosyaları)
+# -----------------------------
+Debug/
+Release/
+build/
+
+# -----------------------------
+# Nesne ve Çalıştırılabilir Dosyalar
+# -----------------------------
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.su
+
+# -----------------------------
+# Editör ve İşletim Sistemi Dosyaları
+# -----------------------------
+# Görselde yer alan ..gitignore.swp gibi geçici dosyalar için:
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# STM32CubeMX Yedek Dosyaları
+# -----------------------------
+*.bak
