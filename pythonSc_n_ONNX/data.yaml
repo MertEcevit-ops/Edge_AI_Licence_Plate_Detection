@@ -1,0 +1,6 @@
+names:
+- license_plate
+nc: 1
+path: /content/license_plate_data
+train: images/train
+val: images/val
