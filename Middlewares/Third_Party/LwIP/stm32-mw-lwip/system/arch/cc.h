@@ -36,7 +36,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* Pull in lwipopts.h so SYS_LIGHTWEIGHT_PROT is defined before we use it.
+   lwip/arch.h includes cc.h before lwip/opt.h, so without this the macro
+   is always 0 here, causing a typedef conflict with sys_arch.h. */
+#include "lwipopts.h"
+
+#if !SYS_LIGHTWEIGHT_PROT
 typedef int sys_prot_t;
+#endif
 
 #define LWIP_PROVIDE_ERRNO
 

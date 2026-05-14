@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "app_tasks.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -104,7 +104,14 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN defaultTask */
-  /* Infinite loop */
+
+  /* Initialize all BSP peripherals and create application tasks */
+  AppTasks_Init();
+
+  /* This task is no longer needed after init — suspend or delete it */
+  osThreadTerminate(osThreadGetId());
+
+  /* Infinite loop (should never reach here) */
   for(;;)
   {
     osDelay(1);
