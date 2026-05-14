@@ -1,5 +1,9 @@
 # Edge AI License Plate Detection (ALPR)
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/jsphtkn/60fcd1ba0f9ddb58fdb53b0aaf649e53/lpr_cnn-embedded-project.ipynb#scrollTo=0TfWW3BWw80L)
+
+*Note: The model training and initial development were performed using GPU acceleration on Google Colab. You can explore the original training pipeline and experiments by clicking the badge above.*
+
 This project focuses on Automatic License Plate Recognition (ALPR) optimized for STM32 embedded systems. 
 
 ## 🏗️ System Architecture
