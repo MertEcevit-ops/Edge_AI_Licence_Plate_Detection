@@ -49,6 +49,7 @@ extern struct netif gnetif;
 extern void LwIP_Init(void);
 extern void LwIP_Process(void);
 extern osStatus_t ethernetif_wait_rx(uint32_t timeout_ms);
+extern IWDG_HandleTypeDef hiwdg;
 
 /* External peripheral handles from main.c */
 /* NOTE: Uncomment these when HASH/PKA modules are enabled in stm32n6xx_hal_conf.h */
@@ -594,7 +595,7 @@ static void WatchdogTask(void *argument)
 
   for (;;)
   {
-    /* TODO: enable when IWDG is configured in this project variant. */
+    HAL_IWDG_Refresh(&hiwdg);
 
     /*
      * Optional: Monitor task health by checking task notification flags

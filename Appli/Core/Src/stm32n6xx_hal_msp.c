@@ -114,6 +114,8 @@ void HAL_DCMIPP_MspInit(DCMIPP_HandleTypeDef* hdcmipp)
     __HAL_RCC_CSI_FORCE_RESET();
     __HAL_RCC_CSI_RELEASE_RESET();
     /* USER CODE BEGIN DCMIPP_MspInit 1 */
+    HAL_NVIC_SetPriority(DCMIPP_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(DCMIPP_IRQn);
 
     /* USER CODE END DCMIPP_MspInit 1 */
 
@@ -139,6 +141,7 @@ void HAL_DCMIPP_MspDeInit(DCMIPP_HandleTypeDef* hdcmipp)
     __HAL_RCC_CSI_FORCE_RESET();
     __HAL_RCC_CSI_RELEASE_RESET();
     /* USER CODE BEGIN DCMIPP_MspDeInit 1 */
+    HAL_NVIC_DisableIRQ(DCMIPP_IRQn);
 
     /* USER CODE END DCMIPP_MspDeInit 1 */
   }
@@ -230,6 +233,8 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* heth)
     HAL_GPIO_Init(ETH_GTX_CLK_GPIO_Port, &GPIO_InitStruct);
 
     /* USER CODE BEGIN ETH1_MspInit 1 */
+    HAL_NVIC_SetPriority(ETH1_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(ETH1_IRQn);
 
     /* USER CODE END ETH1_MspInit 1 */
 
@@ -280,6 +285,7 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
     HAL_GPIO_DeInit(GPIOG, ETH_TXD3_Pin|ETH_TX2_Pin);
 
     /* USER CODE BEGIN ETH1_MspDeInit 1 */
+    HAL_NVIC_DisableIRQ(ETH1_IRQn);
 
     /* USER CODE END ETH1_MspDeInit 1 */
   }
