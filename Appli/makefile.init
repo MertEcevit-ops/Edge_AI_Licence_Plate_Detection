@@ -3,7 +3,7 @@
 # Defines LWIP_OBJS and compilation rules.
 # USER_OBJS += $(LWIP_OBJS) is in makefile.defs (after objects.mk clears USER_OBJS).
 
-LWIP_ROOT := /home/murat/Videos/edge_ai_alpr/Edge_AI_Licence_Plate_Detection/Middlewares/Third_Party/LwIP/stm32-mw-lwip
+LWIP_ROOT := ../../Middlewares/Third_Party/LwIP/stm32-mw-lwip
 
 LWIP_CFLAGS := \
   -mcpu=cortex-m55 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32N657xx -c \
@@ -20,6 +20,12 @@ LWIP_CFLAGS := \
   -I../../Middlewares/Third_Party/LwIP/stm32-mw-lwip/src/include/ \
   -I../../Middlewares/Third_Party/LwIP/stm32-mw-lwip/contrib/ports/freertos/include/ \
   -I../../Middlewares/Third_Party/LwIP/stm32-mw-lwip/system/ \
+  -I../../Middlewares/ST/STM32_ExtMem_Manager \
+  -I../../Middlewares/ST/STM32_ExtMem_Manager/sal \
+  -I../../Middlewares/ST/STM32_ExtMem_Manager/nor_sfdp \
+  -I../../Middlewares/ST/STM32_ExtMem_Manager/psram \
+  -I../../Middlewares/ST/STM32_ExtMem_Manager/sdcard \
+  -I../../Middlewares/ST/STM32_ExtMem_Manager/user \
   -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -mcmse \
   --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb
 
@@ -65,5 +71,26 @@ LWIP_SRCS := \
 LWIP_OBJS := $(patsubst $(LWIP_ROOT)/%.c,./Middlewares/Third_Party/LwIP/stm32-mw-lwip/%.o,$(LWIP_SRCS))
 
 $(LWIP_OBJS): ./Middlewares/Third_Party/LwIP/stm32-mw-lwip/%.o: $(LWIP_ROOT)/%.c
+	@mkdir -p $(dir $@)
+	arm-none-eabi-gcc "$<" $(LWIP_CFLAGS) -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@"
+
+EXTRA_SRCS := \
+  ../../Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_cacheaxi.c \
+  ../../Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_hash.c \
+  ../../Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_iwdg.c \
+  ../../Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_uart.c \
+  ../../Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_uart_ex.c \
+  ../../Middlewares/ST/STM32_ExtMem_Manager/stm32_extmem.c \
+  ../../Middlewares/ST/STM32_ExtMem_Manager/nor_sfdp/stm32_sfdp_data.c \
+  ../../Middlewares/ST/STM32_ExtMem_Manager/nor_sfdp/stm32_sfdp_driver.c \
+  ../../Middlewares/ST/STM32_ExtMem_Manager/psram/stm32_psram_driver.c \
+  ../../Middlewares/ST/STM32_ExtMem_Manager/sal/stm32_sal_sd.c \
+  ../../Middlewares/ST/STM32_ExtMem_Manager/sal/stm32_sal_xspi.c \
+  ../../Middlewares/ST/STM32_ExtMem_Manager/sdcard/stm32_sdcard_driver.c \
+  ../../Middlewares/ST/STM32_ExtMem_Manager/user/stm32_user_driver.c
+
+EXTRA_OBJS := $(patsubst ../../%.c,./%.o,$(EXTRA_SRCS))
+
+$(EXTRA_OBJS): ./%.o: ../../%.c
 	@mkdir -p $(dir $@)
 	arm-none-eabi-gcc "$<" $(LWIP_CFLAGS) -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@"

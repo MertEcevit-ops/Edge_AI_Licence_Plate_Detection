@@ -2,4 +2,4 @@
 # Loaded via "-include ../makefile.defs" AFTER objects.mk resets USER_OBJS :=
 # Appending here ensures LwIP .o files reach the linker command line.
 
-USER_OBJS += $(LWIP_OBJS)
+USER_OBJS += $(LWIP_OBJS) $(EXTRA_OBJS)
