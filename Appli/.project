@@ -227,84 +227,14 @@
       <locationURI>PARENT-1-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_2.c</locationURI>
     </link>
     <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_runtime.c</name>
+      <name>Middlewares/ST/AI/Npu/Devices/STM32N6XX/mcu_cache.c</name>
       <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_runtime.c</locationURI>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/Devices/STM32N6XX/mcu_cache.c</locationURI>
     </link>
     <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_zephyr.c</name>
+      <name>Middlewares/ST/AI/Npu/Devices/STM32N6XX/npu_cache.c</name>
       <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_zephyr.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_dbgtrc.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_dbgtrc.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_debug.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_debug.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_freertos.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_freertos.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_profiler.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_profiler.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_cipher.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_cipher.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_lib.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_lib.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_rt_main.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_rt_main.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_threadx.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_threadx.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_sw_float.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_sw_float.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_sw_integer.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_sw_integer.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_reloc_network.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_reloc_network.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_lib_sw_operators.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_lib_sw_operators.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_util.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_util.c</locationURI>
-    </link>
-    <link>
-      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_reloc_callbacks.c</name>
-      <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_reloc_callbacks.c</locationURI>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/Devices/STM32N6XX/npu_cache.c</locationURI>
     </link>
     <link>
       <name>Middlewares/ST/AI/Npu/ll_aton/ecloader.c</name>
@@ -317,14 +247,84 @@
       <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton.c</locationURI>
     </link>
     <link>
-      <name>Middlewares/ST/AI/Npu/Devices/STM32N6XX/mcu_cache.c</name>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_cipher.c</name>
       <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/Devices/STM32N6XX/mcu_cache.c</locationURI>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_cipher.c</locationURI>
     </link>
     <link>
-      <name>Middlewares/ST/AI/Npu/Devices/STM32N6XX/npu_cache.c</name>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_dbgtrc.c</name>
       <type>1</type>
-      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/Devices/STM32N6XX/npu_cache.c</locationURI>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_dbgtrc.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_debug.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_debug.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_lib.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_lib.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_lib_sw_operators.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_lib_sw_operators.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_freertos.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_freertos.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_threadx.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_threadx.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_zephyr.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_osal_zephyr.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_profiler.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_profiler.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_reloc_callbacks.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_reloc_callbacks.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_reloc_network.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_reloc_network.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_rt_main.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_rt_main.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_runtime.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_runtime.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_aton_util.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_aton_util.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_sw_float.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_sw_float.c</locationURI>
+    </link>
+    <link>
+      <name>Middlewares/ST/AI/Npu/ll_aton/ll_sw_integer.c</name>
+      <type>1</type>
+      <locationURI>PARENT-1-PROJECT_LOC/Middlewares/ST/AI/Npu/ll_aton/ll_sw_integer.c</locationURI>
     </link>
   </linkedResources>
 </projectDescription>

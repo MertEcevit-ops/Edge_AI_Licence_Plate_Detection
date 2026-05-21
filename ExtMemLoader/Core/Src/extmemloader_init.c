@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "extmem_manager.h"
+#include "app_x-cube-ai.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -139,6 +140,8 @@ uint32_t extmemloader_Init()
   MX_ETH1_Init();
 
   MX_XSPI1_Init();
+
+  MX_X_CUBE_AI_Init();
 
   MX_EXTMEM_MANAGER_Init();
 

@@ -110,11 +110,11 @@ int npu_cache_counters_get(uint32_t *counters)
 // #define _RELOC_EXE_RAM_ADDR     (0x90000000)
 
 
-static NN_Instance_TypeDef NN_Instance_alpr;
+static NN_Instance_TypeDef NN_Instance_alpr2;
 
 #else /* !USE_RELOC_MODE */
 
-LL_ATON_DECLARE_NAMED_NN_INSTANCE_AND_INTERFACE(alpr)
+LL_ATON_DECLARE_NAMED_NN_INSTANCE_AND_INTERFACE(alpr2)
 
 #endif
 
@@ -173,15 +173,15 @@ static NN_Instance_TypeDef* _get_nn_instance(int idx)
   config.ext_param_addr = ext_param_addr;
   config.mode = AI_RELOC_RT_LOAD_MODE_COPY; // AI_RELOC_RT_LOAD_MODE_CLEAR, AI_RELOC_RT_LOAD_MODE_COPY or AI_RELOC_RT_LOAD_MODE_XIP;
 
-  res = ll_aton_reloc_install((uintptr_t)rom_addr, &config, &NN_Instance_alpr);
+  res = ll_aton_reloc_install((uintptr_t)rom_addr, &config, &NN_Instance_alpr2);
 
   if (res)
     return NULL;
 
-  return &NN_Instance_alpr;
+  return &NN_Instance_alpr2;
 
 #else
-  return &NN_Instance_alpr;
+  return &NN_Instance_alpr2;
 #endif
 }
 
