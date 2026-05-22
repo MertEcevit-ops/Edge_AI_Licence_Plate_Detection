@@ -38,13 +38,14 @@ ENTRY(Reset_Handler)
 _estack = ORIGIN(RAM) + LENGTH(RAM); /* end of "RAM" Ram type memory */
 _sstack = _estack - _Min_Stack_Size;
 
-_Min_Heap_Size = 0x200; /* required amount of heap */
+_Min_Heap_Size = 0x800; /* required amount of heap */
 _Min_Stack_Size = 0x800; /* required amount of stack */
 
 /* Memories definition */
 MEMORY
 {
   RAM    (xrw)    : ORIGIN = 0x34000400,   LENGTH = 2047K
+  AXIRAM (rw)     : ORIGIN = 0x24000000,   LENGTH = 4096K  /* AXI SRAM — DMA-accessible, noncacheable buffers */
 }
 
 /* Sections */
@@ -147,14 +148,32 @@ SECTIONS
 
   } >RAM
 
-  .noncacheable :
+  /* Ethernet DMA descriptors — must be in noncacheable memory */
+  .RxDecripSection :
   {
-    . = ALIGN(8);
-    __snoncacheable = .;/* create symbol for start of section */
-    KEEP(*(noncacheable_buffer))
-    . = ALIGN(8);
-    __enoncacheable = .;  /* create symbol for end of section */
+    . = ALIGN(32);
+    *(.RxDecripSection)
+    . = ALIGN(32);
   } > RAM
+
+  .TxDecripSection :
+  {
+    . = ALIGN(32);
+    *(.TxDecripSection)
+    . = ALIGN(32);
+  } > RAM
+
+  /* Noncacheable buffer region (LCD framebuffers, camera buffers, ETH RX buffers).
+     Placed in AXI SRAM so DMA can access without cache coherency issues.
+     Total size: ~2.1 MB (2× LCD 640×480 RGB565 + camera preview/AI + ETH RX). */
+  .noncacheable (NOLOAD) :
+  {
+    . = ALIGN(32);
+    __snoncacheable = .;
+    KEEP(*(noncacheable_buffer))
+    . = ALIGN(32);
+    __enoncacheable = .;
+  } > AXIRAM
 
   .gnu.sgstubs :
   {

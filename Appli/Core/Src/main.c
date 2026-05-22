@@ -20,6 +20,8 @@
 #include "main.h"
 #include "string.h"
 #include "cmsis_os2.h"
+#include "extmem_manager.h"
+#include "app_x-cube-ai.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -61,9 +63,15 @@ ETH_DMADescTypeDef DMATxDscrTab[ETH_DMA_TX_CH_CNT][ETH_TX_DESC_CNT] __attribute_
 
 ETH_TxPacketConfig TxConfig;
 
+CACHEAXI_HandleTypeDef hcacheaxi;
+
 DCMIPP_HandleTypeDef hdcmipp;
 
 ETH_HandleTypeDef heth1;
+
+HASH_HandleTypeDef hhash;
+
+IWDG_HandleTypeDef hiwdg;
 
 LTDC_HandleTypeDef hltdc;
 
@@ -72,6 +80,8 @@ PKA_HandleTypeDef hpka;
 RNG_HandleTypeDef hrng;
 
 SD_HandleTypeDef hsd1;
+
+UART_HandleTypeDef huart1;
 
 XSPI_HandleTypeDef hxspi1;
 
@@ -89,6 +99,9 @@ static void MX_RNG_Init(void);
 static void MX_PKA_Init(void);
 static void MX_SDMMC1_SD_Init(void);
 static void MX_XSPI1_Init(void);
+static void MX_CACHEAXI_Init(void);
+static void MX_HASH_Init(void);
+static void MX_IWDG_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -129,6 +142,11 @@ int main(void)
   MX_PKA_Init();
   MX_SDMMC1_SD_Init();
   MX_XSPI1_Init();
+  MX_CACHEAXI_Init();
+  MX_HASH_Init();
+  MX_IWDG_Init();
+  MX_X_CUBE_AI_Init();
+  MX_EXTMEM_MANAGER_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -170,6 +188,32 @@ void PeriphCommonClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief CACHEAXI Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CACHEAXI_Init(void)
+{
+
+  /* USER CODE BEGIN CACHEAXI_Init 0 */
+
+  /* USER CODE END CACHEAXI_Init 0 */
+
+  /* USER CODE BEGIN CACHEAXI_Init 1 */
+
+  /* USER CODE END CACHEAXI_Init 1 */
+  hcacheaxi.Instance = CACHEAXI;
+  if (HAL_CACHEAXI_Init(&hcacheaxi) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CACHEAXI_Init 2 */
+
+  /* USER CODE END CACHEAXI_Init 2 */
+
 }
 
 /**
@@ -303,6 +347,64 @@ static void MX_ETH1_Init(void)
   /* USER CODE BEGIN ETH1_Init 2 */
 
   /* USER CODE END ETH1_Init 2 */
+
+}
+
+/**
+  * @brief HASH Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_HASH_Init(void)
+{
+
+  /* USER CODE BEGIN HASH_Init 0 */
+
+  /* USER CODE END HASH_Init 0 */
+
+  /* USER CODE BEGIN HASH_Init 1 */
+
+  /* USER CODE END HASH_Init 1 */
+  hhash.Instance = HASH;
+  hhash.Init.DataType = HASH_NO_SWAP;
+  hhash.Init.Algorithm = HASH_ALGOSELECTION_SHA256;
+  if (HAL_HASH_Init(&hhash) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN HASH_Init 2 */
+
+  /* USER CODE END HASH_Init 2 */
+
+}
+
+/**
+  * @brief IWDG Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_IWDG_Init(void)
+{
+
+  /* USER CODE BEGIN IWDG_Init 0 */
+
+  /* USER CODE END IWDG_Init 0 */
+
+  /* USER CODE BEGIN IWDG_Init 1 */
+
+  /* USER CODE END IWDG_Init 1 */
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_64;
+  hiwdg.Init.Window = 4095;
+  hiwdg.Init.Reload = 2500;
+  hiwdg.Init.EWI = 0;
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN IWDG_Init 2 */
+
+  /* USER CODE END IWDG_Init 2 */
 
 }
 
@@ -469,6 +571,54 @@ static void MX_SDMMC1_SD_Init(void)
   /* USER CODE BEGIN SDMMC1_Init 2 */
 
   /* USER CODE END SDMMC1_Init 2 */
+
+}
+
+/**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
 
 }
 

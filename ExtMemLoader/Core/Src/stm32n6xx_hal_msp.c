@@ -121,7 +121,6 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* heth)
     /**ETH1 GPIO Configuration
     PD1     ------> ETH1_MDC
     PD12     ------> ETH1_MDIO
-    PD3     ------> ETH1_PHY_INTN
     PF10     ------> ETH1_RMII_CRS_DV
     PF7     ------> ETH1_RMII_REF_CLK
     PF5     ------> ETH1_CLK
@@ -137,7 +136,7 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* heth)
     PF0     ------> ETH1_RGMII_GTX_CLK
     PF12     ------> ETH1_RMII_TXD0
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_12|ETH_MDINT_Pin;
+    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -194,7 +193,6 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
     /**ETH1 GPIO Configuration
     PD1     ------> ETH1_MDC
     PD12     ------> ETH1_MDIO
-    PD3     ------> ETH1_PHY_INTN
     PF10     ------> ETH1_RMII_CRS_DV
     PF7     ------> ETH1_RMII_REF_CLK
     PF5     ------> ETH1_CLK
@@ -210,7 +208,7 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
     PF0     ------> ETH1_RGMII_GTX_CLK
     PF12     ------> ETH1_RMII_TXD0
     */
-    HAL_GPIO_DeInit(GPIOD, GPIO_PIN_1|GPIO_PIN_12|ETH_MDINT_Pin);
+    HAL_GPIO_DeInit(GPIOD, GPIO_PIN_1|GPIO_PIN_12);
 
     HAL_GPIO_DeInit(GPIOF, GPIO_PIN_10|GPIO_PIN_7|ETH_CLK_Pin|GPIO_PIN_15
                           |GPIO_PIN_14|ETH_RXD2_Pin|ETH_CLK125_Pin|ETH_RXD3_Pin

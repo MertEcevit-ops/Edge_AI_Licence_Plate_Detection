@@ -57,6 +57,8 @@
 /* External variables --------------------------------------------------------*/
 
 /* USER CODE BEGIN EV */
+extern ETH_HandleTypeDef heth1;
+extern DCMIPP_HandleTypeDef hdcmipp;
 
 /* USER CODE END EV */
 
@@ -174,5 +176,21 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
+
+/**
+  * @brief  Ethernet global interrupt handler.
+  */
+void ETH1_IRQHandler(void)
+{
+  HAL_ETH_IRQHandler(&heth1);
+}
+
+/**
+  * @brief  DCMIPP global interrupt handler.
+  */
+void DCMIPP_IRQHandler(void)
+{
+  HAL_DCMIPP_IRQHandler(&hdcmipp);
+}
 
 /* USER CODE END 1 */

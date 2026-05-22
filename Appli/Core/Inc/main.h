@@ -69,6 +69,7 @@ typedef funcptr funcptr_NS;
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
+void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN EFP */
 
@@ -87,8 +88,12 @@ void Error_Handler(void);
 #define LCD_R2_GPIO_Port GPIOD
 #define LCD_HSYNC_Pin GPIO_PIN_14
 #define LCD_HSYNC_GPIO_Port GPIOB
+#define VCP_TX_Pin GPIO_PIN_5
+#define VCP_TX_GPIO_Port GPIOE
 #define LCD_B2_Pin GPIO_PIN_2
 #define LCD_B2_GPIO_Port GPIOB
+#define VCP_RX_Pin GPIO_PIN_6
+#define VCP_RX_GPIO_Port GPIOE
 #define LCD_G4_Pin GPIO_PIN_15
 #define LCD_G4_GPIO_Port GPIOB
 #define LCD_VSYNC_Pin GPIO_PIN_11

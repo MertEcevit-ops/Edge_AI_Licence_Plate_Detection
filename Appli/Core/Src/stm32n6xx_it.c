@@ -22,6 +22,7 @@
 #include "stm32n6xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ethernetif.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,7 +58,9 @@
 /* External variables --------------------------------------------------------*/
 
 /* USER CODE BEGIN EV */
-
+extern ETH_HandleTypeDef heth1;
+extern DCMIPP_HandleTypeDef hdcmipp;
+extern LTDC_HandleTypeDef hltdc;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -174,5 +177,37 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
+
+/**
+  * @brief  Ethernet global interrupt handler.
+  */
+void ETH1_IRQHandler(void)
+{
+  HAL_ETH_IRQHandler(&heth1);
+}
+
+/**
+  * @brief  DCMIPP global interrupt handler.
+  */
+void DCMIPP_IRQHandler(void)
+{
+  HAL_DCMIPP_IRQHandler(&hdcmipp);
+}
+
+/**
+  * @brief  LTDC global interrupt handler (line event / error).
+  */
+void LTDC_IRQHandler(void)
+{
+  HAL_LTDC_IRQHandler(&hltdc);
+}
+
+/**
+  * @brief  LTDC error interrupt handler.
+  */
+void LTDC_ER_IRQHandler(void)
+{
+  HAL_LTDC_IRQHandler(&hltdc);
+}
 
 /* USER CODE END 1 */
