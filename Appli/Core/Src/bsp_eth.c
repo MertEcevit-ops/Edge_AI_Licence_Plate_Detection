@@ -7,11 +7,67 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "bsp_eth.h"
+#include <string.h>
 
-/* External ETH handle from CubeMX-generated main.c */
-extern ETH_HandleTypeDef heth1;
+static ETH_HandleTypeDef heth1;
+static uint8_t eth_opened = 0U;
+
+#if defined ( __ICCARM__ )
+#pragma location=0x341F8000
+static ETH_DMADescTypeDef DMARxDscrTab[ETH_DMA_RX_CH_CNT][ETH_RX_DESC_CNT];
+#pragma location=0x341F80C0
+static ETH_DMADescTypeDef DMATxDscrTab[ETH_DMA_TX_CH_CNT][ETH_TX_DESC_CNT];
+
+#elif defined ( __CC_ARM )
+
+static __attribute__((at(0x341F8000))) ETH_DMADescTypeDef DMARxDscrTab[ETH_DMA_RX_CH_CNT][ETH_RX_DESC_CNT];
+static __attribute__((at(0x341F80C0))) ETH_DMADescTypeDef DMATxDscrTab[ETH_DMA_TX_CH_CNT][ETH_TX_DESC_CNT];
+
+#elif defined ( __GNUC__ )
+
+static ETH_DMADescTypeDef DMARxDscrTab[ETH_DMA_RX_CH_CNT][ETH_RX_DESC_CNT]
+    __attribute__((section(".RxDecripSection")));
+static ETH_DMADescTypeDef DMATxDscrTab[ETH_DMA_TX_CH_CNT][ETH_TX_DESC_CNT]
+    __attribute__((section(".TxDecripSection")));
+#endif
 
 /* Exported functions --------------------------------------------------------*/
+
+BSP_ETH_StatusTypeDef BSP_ETH_Open(void)
+{
+  static uint8_t MACAddr[6];
+
+  if (eth_opened != 0U)
+  {
+    return BSP_ETH_OK;
+  }
+
+  heth1.Instance = ETH1;
+  MACAddr[0] = 0x00;
+  MACAddr[1] = 0x80;
+  MACAddr[2] = 0xE1;
+  MACAddr[3] = 0x00;
+  MACAddr[4] = 0x00;
+  MACAddr[5] = 0x00;
+  heth1.Init.MACAddr = &MACAddr[0];
+  heth1.Init.MediaInterface = HAL_ETH_RMII_MODE;
+
+  for (uint32_t ch = 0; ch < ETH_DMA_CH_CNT; ch++)
+  {
+    heth1.Init.TxDesc[ch] = DMATxDscrTab[ch];
+    heth1.Init.RxDesc[ch] = DMARxDscrTab[ch];
+  }
+
+  heth1.Init.RxBuffLen = 1524;
+
+  if (HAL_ETH_Init(&heth1) != HAL_OK)
+  {
+    return BSP_ETH_ERROR;
+  }
+
+  eth_opened = 1U;
+  return BSP_ETH_OK;
+}
 
 /**
   * @brief  Initialize the Ethernet PHY (soft reset + auto-negotiation).
@@ -19,6 +75,12 @@ extern ETH_HandleTypeDef heth1;
 BSP_ETH_StatusTypeDef BSP_ETH_PHY_Init(void)
 {
   BSP_ETH_StatusTypeDef status;
+
+  status = BSP_ETH_Open();
+  if (status != BSP_ETH_OK)
+  {
+    return status;
+  }
 
   /* Soft reset the PHY */
   status = BSP_ETH_PHY_Reset();
@@ -210,4 +272,9 @@ BSP_ETH_StatusTypeDef BSP_ETH_PHY_SetLoopback(uint8_t enable)
   }
 
   return BSP_ETH_PHY_WriteReg(PHY_BCR, reg_val);
+}
+
+ETH_HandleTypeDef *BSP_ETH_GetHandle(void)
+{
+  return &heth1;
 }

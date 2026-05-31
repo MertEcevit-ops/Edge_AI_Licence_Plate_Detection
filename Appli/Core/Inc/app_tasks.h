@@ -121,7 +121,7 @@ typedef struct
  * - CameraCapture:   Light — just manages DMA/DCMIPP triggers
  * - Detection:       Large — YOLO pre/post-processing on CPU, NPU invocation
  * - OCR:             Large — OCR pre/post-processing, character decoding
- * - CryptoTransmit:  Medium — mbedTLS SHA-256 / AES context, LwIP send
+ * - CryptoTransmit:  Medium — SHA-256 / AES-256 context, LwIP send
  * - EthInput:        Medium — pbuf processing
  * - EthLink:         Small — PHY register polling
  * - Display:         Medium — framebuffer drawing operations

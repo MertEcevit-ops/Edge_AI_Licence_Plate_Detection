@@ -51,6 +51,17 @@ extern "C" {
 #define LCD_LAYER_0                0U
 #define LCD_LAYER_1                1U
 
+/* RGB565 colors */
+#define RGB565_BLACK               0x0000U
+#define RGB565_WHITE               0xFFFFU
+#define RGB565_RED                 0xF800U
+#define RGB565_GREEN               0x07E0U
+#define RGB565_BLUE                0x001FU
+#define RGB565_YELLOW              0xFFE0U
+#define RGB565_CYAN                0x07FFU
+#define RGB565_MAGENTA             0xF81FU
+#define RGB565_GRAY                0x8410U
+
 /* LCD control GPIOs */
 #define LCD_BL_CTRL_PIN            GPIO_PIN_6   /* PQ6 */
 #define LCD_BL_CTRL_PORT           GPIOQ
@@ -108,10 +119,11 @@ extern BSP_LCD_Ctx_t LcdCtx;
 
 /**
   * @brief  Initialize the LCD peripheral (LTDC + GPIO + backlight).
-  *         Uses the CubeMX-generated MX_LTDC_Init() configuration internally.
+  *         Opens LTDC through the LCD BSP driver.
   * @retval BSP_LCD_OK on success, BSP_LCD_ERROR otherwise
   */
 BSP_LCD_StatusTypeDef BSP_LCD_Init(void);
+BSP_LCD_StatusTypeDef BSP_LCD_Open(void);
 
 /**
   * @brief  De-initialize the LCD peripheral.
@@ -198,6 +210,7 @@ uint16_t *BSP_LCD_GetBackBuffer(uint32_t LayerIdx);
   *         Weak function — can be overridden in user code.
   */
 void BSP_LCD_LineEventCallback(void);
+LTDC_HandleTypeDef *BSP_LCD_GetHandle(void);
 
 /**
   * @}

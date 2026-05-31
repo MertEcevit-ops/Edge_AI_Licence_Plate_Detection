@@ -126,6 +126,7 @@ typedef struct
   * @retval BSP_ETH_OK on success
   */
 BSP_ETH_StatusTypeDef BSP_ETH_PHY_Init(void);
+BSP_ETH_StatusTypeDef BSP_ETH_Open(void);
 
 /**
   * @brief  Get current link state.
@@ -168,6 +169,7 @@ BSP_ETH_StatusTypeDef BSP_ETH_PHY_AutoNegotiate(void);
   * @retval BSP_ETH_OK on success
   */
 BSP_ETH_StatusTypeDef BSP_ETH_PHY_SetLoopback(uint8_t enable);
+ETH_HandleTypeDef *BSP_ETH_GetHandle(void);
 
 /**
   * @}

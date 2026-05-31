@@ -51,9 +51,6 @@
 /* USER CODE BEGIN INCLUDE */
 
 /* USER CODE END INCLUDE */
-/* Private variables ---------------------------------------------------------*/
-extern XSPI_HandleTypeDef hxspi1;
-
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */

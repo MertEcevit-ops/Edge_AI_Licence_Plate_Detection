@@ -22,10 +22,14 @@
 #include "bsp_lcd.h"
 #include "bsp_camera.h"
 #include "bsp_eth.h"
+#include "bsp_watchdog.h"
 #include "ethernetif.h"
+#include "security_layer.h"
 #include "main.h"
 
 #include "cmsis_os2.h"
+#include "lwip/api.h"
+#include "lwip/ip_addr.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -34,27 +38,22 @@
 #define APP_TEST_OVERLAY_ENABLED                    1U
 #define APP_DISPLAY_TEST_PERIOD_MS                  100U
 
-#define RGB565_BLACK                                0x0000U
-#define RGB565_WHITE                                0xFFFFU
-#define RGB565_RED                                  0xF800U
-#define RGB565_GREEN                                0x07E0U
-#define RGB565_BLUE                                 0x001FU
-#define RGB565_YELLOW                               0xFFE0U
-#define RGB565_CYAN                                 0x07FFU
-#define RGB565_MAGENTA                              0xF81FU
-#define RGB565_GRAY                                 0x8410U
+#ifndef ALPR_HOST_IP_ADDR0
+#define ALPR_HOST_IP_ADDR0                          192U
+#define ALPR_HOST_IP_ADDR1                          168U
+#define ALPR_HOST_IP_ADDR2                          1U
+#define ALPR_HOST_IP_ADDR3                          10U
+#endif
+
+#ifndef ALPR_HOST_TCP_PORT
+#define ALPR_HOST_TCP_PORT                          9000U
+#endif
 
 /* External declarations -----------------------------------------------------*/
 extern struct netif gnetif;
 extern void LwIP_Init(void);
 extern void LwIP_Process(void);
 extern osStatus_t ethernetif_wait_rx(uint32_t timeout_ms);
-extern IWDG_HandleTypeDef hiwdg;
-
-/* External peripheral handles from main.c */
-/* NOTE: Uncomment these when HASH/PKA modules are enabled in stm32n6xx_hal_conf.h */
-/* extern HASH_HandleTypeDef hhash; */   /* Hardware SHA-256 (CubeMX) */
-/* extern PKA_HandleTypeDef  hpka; */    /* Public Key Accelerator    */
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  GLOBAL SYNC OBJECTS & SHARED DATA                                         */
@@ -107,6 +106,9 @@ static void Display_DrawRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h,
                              uint16_t color);
 static void Display_DrawFrameCounter(uint32_t frame_id);
 static void Display_ClearBackBuffer(uint16_t color);
+static size_t Crypto_BuildPlaintext(const PlateResultMsg_t *result,
+                                    uint8_t *buffer, size_t buffer_size);
+static void Crypto_SendSecurePacket(const SecurityPacket_t *packet);
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  TASK ATTRIBUTES                                                           */
@@ -155,7 +157,7 @@ void AppTasks_Init(void)
 
   /* LCD — display startup screen */
   BSP_LCD_Init();
-  BSP_LCD_Clear(LCD_LAYER_0, 0x001F);  /* Dark blue = "system booting" */
+  BSP_LCD_Clear(LCD_LAYER_0, RGB565_BLUE);
 
   /* Camera — configure DCMIPP pipes */
   BSP_Camera_Init();
@@ -181,6 +183,11 @@ void AppTasks_Init(void)
   /* ── 3. Initialize Network Stack ──────────────────────────────────────── */
 
   LwIP_Init();
+
+  if (SecurityLayer_Init() != SECURITY_OK)
+  {
+    Error_Handler();
+  }
 
   /* ── 4. Create Application Tasks ──────────────────────────────────────── */
 
@@ -417,7 +424,7 @@ static void OCRTask(void *argument)
 /*  TASK 4: CRYPTO + TRANSMIT                                                 */
 /*  Priority: Normal                                                          */
 /*  Role: Receives recognized plate text from OCRTask, encrypts it using      */
-/*        mbedTLS (SHA-256 hash + AES-256 encryption), then transmits         */
+/*        SHA-256 hash + AES-256 encryption, then transmits                   */
 /*        the encrypted payload to the backend server via LwIP TCP/UDP.       */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -425,10 +432,8 @@ static void CryptoTransmitTask(void *argument)
 {
   (void)argument;
   PlateResultMsg_t result_msg;
-
-  /* Encryption working buffers */
-  uint8_t hash_digest[32];    /* SHA-256 output (32 bytes) */
-  uint8_t encrypted_buf[128]; /* AES-256 encrypted payload */
+  uint8_t plaintext[SECURITY_MAX_PLAINTEXT_SIZE];
+  SecurityPacket_t secure_packet;
 
   for (;;)
   {
@@ -436,71 +441,22 @@ static void CryptoTransmitTask(void *argument)
     if (osMessageQueueGet(PlateResultQueue, &result_msg, NULL,
                           osWaitForever) == osOK)
     {
-      /*
-       * ──────────────────────────────────────────────────────────────
-       *  STEP 1: HASH — Compute SHA-256 of plate data for integrity
-       * ──────────────────────────────────────────────────────────────
-       *
-       * TODO: Use hardware HASH peripheral or mbedTLS:
-       *
-       *   // Hardware HASH (STM32N6 has SHA-256 accelerator):
-       *   HAL_HASH_Start(&hhash,
-       *                  (uint8_t *)result_msg.plate_text,
-       *                  strlen(result_msg.plate_text),
-       *                  hash_digest,
-       *                  HAL_MAX_DELAY);
-       *
-       *   // Or mbedTLS software:
-       *   mbedtls_sha256(result_msg.plate_text,
-       *                  strlen(result_msg.plate_text),
-       *                  hash_digest, 0);
-       */
-      (void)hash_digest;
+      size_t plaintext_len = Crypto_BuildPlaintext(&result_msg, plaintext,
+                                                   sizeof(plaintext));
 
-      /*
-       * ──────────────────────────────────────────────────────────────
-       *  STEP 2: ENCRYPT — AES-256-CBC/GCM encryption
-       * ──────────────────────────────────────────────────────────────
-       *
-       * TODO: Use mbedTLS AES:
-       *
-       *   mbedtls_aes_context aes_ctx;
-       *   mbedtls_aes_init(&aes_ctx);
-       *   mbedtls_aes_setkey_enc(&aes_ctx, aes_key, 256);
-       *   mbedtls_aes_crypt_cbc(&aes_ctx, MBEDTLS_AES_ENCRYPT,
-       *                         payload_len, iv, plaintext, encrypted_buf);
-       *   mbedtls_aes_free(&aes_ctx);
-       *
-       * Or use PKA for asymmetric operations if needed.
-       */
-      (void)encrypted_buf;
+      if (plaintext_len == 0U)
+      {
+        continue;
+      }
 
-      /*
-       * ──────────────────────────────────────────────────────────────
-       *  STEP 3: TRANSMIT — Send encrypted payload via LwIP
-       * ──────────────────────────────────────────────────────────────
-       *
-       * TODO: Implement TCP client or UDP sender:
-       *
-       *   // TCP example:
-       *   struct netconn *conn = netconn_new(NETCONN_TCP);
-       *   ip4_addr_t server_ip;
-       *   IP4_ADDR(&server_ip, 192, 168, 1, 10);
-       *   netconn_connect(conn, &server_ip, 8080);
-       *
-       *   struct netbuf *buf = netbuf_new();
-       *   void *data = netbuf_alloc(buf, encrypted_len);
-       *   memcpy(data, encrypted_buf, encrypted_len);
-       *   netconn_send(conn, buf);
-       *   netbuf_delete(buf);
-       *   netconn_close(conn);
-       *   netconn_delete(conn);
-       *
-       *   // UDP example:
-       *   struct netconn *conn = netconn_new(NETCONN_UDP);
-       *   netconn_connect(conn, &server_ip, 9000);
-       *   netconn_send(conn, buf);
-       */
+      if (SecurityLayer_Seal(plaintext, plaintext_len, result_msg.frame_id,
+                             result_msg.timestamp_ms,
+                             &secure_packet) != SECURITY_OK)
+      {
+        continue;
+      }
+
+      Crypto_SendSecurePacket(&secure_packet);
     }
   }
 }
@@ -585,24 +541,9 @@ static void WatchdogTask(void *argument)
 {
   (void)argument;
 
-  /*
-   * IWDG is configured in main.c (MX_IWDG_Init):
-   *   Prescaler = 64, Reload = 2500
-   *   Timeout ≈ (64 * 2500) / 32000 Hz = 5 seconds
-   *
-   * We feed it every 1 second — providing a comfortable margin.
-   */
-
   for (;;)
   {
-    HAL_IWDG_Refresh(&hiwdg);
-
-    /*
-     * Optional: Monitor task health by checking task notification flags
-     * from each pipeline task. If a task hasn't reported in N seconds,
-     * don't feed the watchdog → system reset.
-     */
-
+    (void)BSP_Watchdog_Refresh();
     osDelay(1000);
   }
 }
@@ -719,4 +660,68 @@ static void Display_ClearBackBuffer(uint16_t color)
   {
     fb[i] = color;
   }
+}
+
+static size_t Crypto_BuildPlaintext(const PlateResultMsg_t *result,
+                                    uint8_t *buffer, size_t buffer_size)
+{
+  uint32_t confidence_milli;
+  int written;
+
+  if ((result == NULL) || (buffer == NULL) || (buffer_size == 0U))
+  {
+    return 0U;
+  }
+
+  confidence_milli = (result->ocr_confidence <= 0.0f) ? 0U :
+      (uint32_t)(result->ocr_confidence * 1000.0f);
+
+  written = snprintf((char *)buffer, buffer_size,
+                     "{\"frame_id\":%lu,\"timestamp_ms\":%lu,"
+                     "\"plate\":\"%s\",\"ocr_confidence_milli\":%lu,"
+                     "\"bbox\":{\"x\":%u,\"y\":%u,\"w\":%u,\"h\":%u}}",
+                     (unsigned long)result->frame_id,
+                     (unsigned long)result->timestamp_ms,
+                     result->plate_text,
+                     (unsigned long)confidence_milli,
+                     result->bbox.x, result->bbox.y,
+                     result->bbox.w, result->bbox.h);
+
+  if ((written <= 0) || ((size_t)written >= buffer_size))
+  {
+    return 0U;
+  }
+
+  return (size_t)written;
+}
+
+static void Crypto_SendSecurePacket(const SecurityPacket_t *packet)
+{
+  struct netconn *conn;
+  ip_addr_t server_ip;
+  size_t wire_size;
+
+  wire_size = SecurityLayer_GetPacketWireSize(packet);
+  if (wire_size == 0U)
+  {
+    return;
+  }
+
+  conn = netconn_new(NETCONN_TCP);
+  if (conn == NULL)
+  {
+    return;
+  }
+
+  IP_ADDR4(&server_ip, ALPR_HOST_IP_ADDR0, ALPR_HOST_IP_ADDR1,
+           ALPR_HOST_IP_ADDR2, ALPR_HOST_IP_ADDR3);
+
+  if (netconn_connect(conn, &server_ip,
+                      (uint16_t)ALPR_HOST_TCP_PORT) == ERR_OK)
+  {
+    (void)netconn_write(conn, packet, wire_size, NETCONN_COPY);
+    (void)netconn_close(conn);
+  }
+
+  netconn_delete(conn);
 }

@@ -54,6 +54,11 @@
 #include "ll_aton_lib.h"
 #include "ll_aton_version.h"
 #include "ll_sw.h"
+#include <math.h>
+
+#ifndef inf
+#define inf INFINITY
+#endif
 
 #if LL_ATON_VERSION_MAJOR != 1 || LL_ATON_VERSION_MINOR != 1 || LL_ATON_VERSION_MICRO != 1 || LL_ATON_VERSION_DEV != 14
 #  warning "Possible mismatch in ll_aton library used"
@@ -31965,4 +31970,3 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Internal_Buffers_Info_alpr2(void)
 
   return buff_info;
 }
-

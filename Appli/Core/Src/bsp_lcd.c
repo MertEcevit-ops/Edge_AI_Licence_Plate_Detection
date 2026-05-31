@@ -21,8 +21,8 @@ static uint16_t __attribute__((section("noncacheable_buffer"), aligned(32)))
 /* LCD context */
 BSP_LCD_Ctx_t LcdCtx = {0};
 
-/* External LTDC handle from CubeMX-generated main.c */
-extern LTDC_HandleTypeDef hltdc;
+static LTDC_HandleTypeDef hltdc;
+static uint8_t lcd_opened = 0U;
 
 /* Private function prototypes -----------------------------------------------*/
 static void LCD_GPIO_BacklightInit(void);
@@ -36,6 +36,11 @@ static void LCD_HW_Reset(void);
 BSP_LCD_StatusTypeDef BSP_LCD_Init(void)
 {
   LTDC_LayerCfgTypeDef layerCfg = {0};
+
+  if (BSP_LCD_Open() != BSP_LCD_OK)
+  {
+    return BSP_LCD_ERROR;
+  }
 
   /* Initialize LCD context */
   LcdCtx.Width          = LCD_WIDTH;
@@ -88,6 +93,68 @@ BSP_LCD_StatusTypeDef BSP_LCD_Init(void)
   return BSP_LCD_OK;
 }
 
+BSP_LCD_StatusTypeDef BSP_LCD_Open(void)
+{
+  LTDC_LayerCfgTypeDef pLayerCfg = {0};
+  LTDC_LayerCfgTypeDef pLayerCfg1 = {0};
+
+  if (lcd_opened != 0U)
+  {
+    return BSP_LCD_OK;
+  }
+
+  hltdc.Instance = LTDC;
+  hltdc.Init.HSPolarity = LTDC_HSPOLARITY_AL;
+  hltdc.Init.VSPolarity = LTDC_VSPOLARITY_AL;
+  hltdc.Init.DEPolarity = LTDC_DEPOLARITY_AL;
+  hltdc.Init.PCPolarity = LTDC_PCPOLARITY_IPC;
+  hltdc.Init.HorizontalSync = LCD_HSYNC - 1U;
+  hltdc.Init.VerticalSync = LCD_VSYNC - 1U;
+  hltdc.Init.AccumulatedHBP = LCD_HSYNC + LCD_HBP - 1U;
+  hltdc.Init.AccumulatedVBP = LCD_VSYNC + LCD_VBP - 1U;
+  hltdc.Init.AccumulatedActiveW = LCD_HSYNC + LCD_HBP + LCD_WIDTH - 1U;
+  hltdc.Init.AccumulatedActiveH = LCD_VSYNC + LCD_VBP + LCD_HEIGHT - 1U;
+  hltdc.Init.TotalWidth = LCD_HSYNC + LCD_HBP + LCD_WIDTH + LCD_HFP - 1U;
+  hltdc.Init.TotalHeigh = LCD_VSYNC + LCD_VBP + LCD_HEIGHT + LCD_VFP - 1U;
+  hltdc.Init.Backcolor.Blue = 0;
+  hltdc.Init.Backcolor.Green = 0;
+  hltdc.Init.Backcolor.Red = 0;
+
+  if (HAL_LTDC_Init(&hltdc) != HAL_OK)
+  {
+    return BSP_LCD_ERROR;
+  }
+
+  pLayerCfg.WindowX0 = 0;
+  pLayerCfg.WindowX1 = 0;
+  pLayerCfg.WindowY0 = 0;
+  pLayerCfg.WindowY1 = 0;
+  pLayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_ARGB8888;
+  pLayerCfg.Alpha = 0;
+  pLayerCfg.Alpha0 = 0;
+  pLayerCfg.BlendingFactor1 = LTDC_BLENDING_FACTOR1_CA;
+  pLayerCfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_CA;
+  pLayerCfg.FBStartAdress = 0;
+  pLayerCfg.ImageWidth = 0;
+  pLayerCfg.ImageHeight = 0;
+  pLayerCfg.Backcolor.Blue = 0;
+  pLayerCfg.Backcolor.Green = 0;
+  pLayerCfg.Backcolor.Red = 0;
+  if (HAL_LTDC_ConfigLayer(&hltdc, &pLayerCfg, LCD_LAYER_0) != HAL_OK)
+  {
+    return BSP_LCD_ERROR;
+  }
+
+  pLayerCfg1 = pLayerCfg;
+  if (HAL_LTDC_ConfigLayer(&hltdc, &pLayerCfg1, LCD_LAYER_1) != HAL_OK)
+  {
+    return BSP_LCD_ERROR;
+  }
+
+  lcd_opened = 1U;
+  return BSP_LCD_OK;
+}
+
 /**
   * @brief  De-initialize the LCD peripheral.
   */
@@ -95,6 +162,7 @@ BSP_LCD_StatusTypeDef BSP_LCD_DeInit(void)
 {
   BSP_LCD_DisplayOff();
   HAL_LTDC_DeInit(&hltdc);
+  lcd_opened = 0U;
   return BSP_LCD_OK;
 }
 
@@ -262,6 +330,11 @@ void HAL_LTDC_LineEventCallback(LTDC_HandleTypeDef *hltdc_ptr)
 __weak void BSP_LCD_LineEventCallback(void)
 {
   /* Override this in application code if needed */
+}
+
+LTDC_HandleTypeDef *BSP_LCD_GetHandle(void)
+{
+  return &hltdc;
 }
 
 /* Private functions ---------------------------------------------------------*/

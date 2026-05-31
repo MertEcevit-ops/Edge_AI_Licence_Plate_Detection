@@ -67,6 +67,11 @@ void LwIP_Init(void)
   /* Initialize the LwIP stack with RTOS */
   tcpip_init(tcpip_init_done_cb, NULL);
 
+  if (BSP_ETH_Open() != BSP_ETH_OK)
+  {
+    Error_Handler();
+  }
+
 #if USE_DHCP
   ip4_addr_set_zero(&ipaddr);
   ip4_addr_set_zero(&netmask);

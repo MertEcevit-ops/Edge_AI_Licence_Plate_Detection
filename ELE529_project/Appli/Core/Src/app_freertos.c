@@ -23,7 +23,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app_tasks.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,17 +44,17 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
+/* Definitions for AppStartupTask */
+osThreadId_t AppStartupTaskHandle;
+const osThreadAttr_t AppStartupTask_attributes = {
+  .name = "AppStartup",
+  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 512 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-void StartDefaultTask(void *argument);
+static void AppStartupTask(void *argument);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -84,8 +83,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* creation of AppStartupTask */
+  AppStartupTaskHandle = osThreadNew(AppStartupTask, NULL,
+                                     &AppStartupTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -96,31 +96,24 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_EVENTS */
 
 }
-
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_AppStartupTask */
 /**
-* @brief Function implementing the defaultTask thread.
+* @brief Function implementing the AppStartupTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+/* USER CODE END Header_AppStartupTask */
+static void AppStartupTask(void *argument)
 {
-  /* USER CODE BEGIN defaultTask */
-
   (void)argument;
 
-  /* Initialize all BSP peripherals and create application tasks */
   AppTasks_Init();
-
-  /* This task is only a bootstrapper. */
-  osThreadTerminate(osThreadGetId());
+  osThreadExit();
 
   for (;;)
   {
-    osDelay(1);
+    osDelay(1000);
   }
-  /* USER CODE END defaultTask */
 }
 
 /* Private application code --------------------------------------------------*/

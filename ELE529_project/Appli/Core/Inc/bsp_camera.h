@@ -135,6 +135,7 @@ extern BSP_Camera_Ctx_t CameraCtx;
   * @retval BSP_CAM_OK on success
   */
 BSP_Camera_StatusTypeDef BSP_Camera_Init(void);
+BSP_Camera_StatusTypeDef BSP_Camera_Open(void);
 
 /**
   * @brief  De-initialize the camera subsystem.
@@ -188,6 +189,7 @@ void BSP_Camera_RegisterCallback(BSP_Camera_FrameReadyCb_t cb);
   * @brief  Hardware reset the camera sensor via NRST_CAM pin.
   */
 void BSP_Camera_HW_Reset(void);
+DCMIPP_HandleTypeDef *BSP_Camera_GetHandle(void);
 
 /**
   * @}

@@ -14,8 +14,8 @@
 /* Camera context */
 BSP_Camera_Ctx_t CameraCtx = {0};
 
-/* External DCMIPP handle from CubeMX-generated main.c */
-extern DCMIPP_HandleTypeDef hdcmipp;
+static DCMIPP_HandleTypeDef hdcmipp;
+static uint8_t camera_opened = 0U;
 
 /* Frame buffers — placed in noncacheable region for DMA coherency */
 static uint8_t __attribute__((section("noncacheable_buffer"), aligned(32)))
@@ -35,6 +35,11 @@ static DCMIPP_PipeConfTypeDef Camera_GetPipeConfig(BSP_Camera_PipeType_t pipe);
   */
 BSP_Camera_StatusTypeDef BSP_Camera_Init(void)
 {
+  if (BSP_Camera_Open() != BSP_CAM_OK)
+  {
+    return BSP_CAM_ERROR;
+  }
+
   /* Initialize context */
   CameraCtx.State           = CAMERA_STATE_RESET;
   CameraCtx.PreviewWidth    = CAMERA_PREVIEW_WIDTH;
@@ -55,19 +60,86 @@ BSP_Camera_StatusTypeDef BSP_Camera_Init(void)
   memset(camera_preview_fb, 0, sizeof(camera_preview_fb));
   memset(camera_ai_fb, 0, sizeof(camera_ai_fb));
 
-  /*
-   * Note: DCMIPP and CSI are already initialized by CubeMX MX_DCMIPP_Init().
-   * The pipe configurations in main.c set up:
-   *   - Pipe0: RGB565, pitch=1600 (800 pixels), frame rate ALL
-   *   - Pipe1: RGB888, pitch=960 (320 pixels), frame rate ALL
-   *   - Pipe2: RGB888, pitch=10, frame rate 1/4
-   *
-   * If you need different parameters, reconfigure pipes here using
-   * HAL_DCMIPP_PIPE_SetConfig().
-   */
-
   CameraCtx.State = CAMERA_STATE_INIT;
 
+  return BSP_CAM_OK;
+}
+
+BSP_Camera_StatusTypeDef BSP_Camera_Open(void)
+{
+  DCMIPP_CSI_PIPE_ConfTypeDef pCSI_PipeConfig = {0};
+  DCMIPP_CSI_ConfTypeDef pCSI_Config = {0};
+  DCMIPP_PipeConfTypeDef pPipeConfig = {0};
+
+  if (camera_opened != 0U)
+  {
+    return BSP_CAM_OK;
+  }
+
+  hdcmipp.Instance = DCMIPP;
+  if (HAL_DCMIPP_Init(&hdcmipp) != HAL_OK)
+  {
+    return BSP_CAM_ERROR;
+  }
+
+  pCSI_PipeConfig.DataTypeMode = DCMIPP_DTMODE_DTIDA;
+  pCSI_PipeConfig.DataTypeIDA = DCMIPP_DT_YUV420_8;
+  pCSI_PipeConfig.DataTypeIDB = DCMIPP_DT_YUV420_8;
+  if (HAL_DCMIPP_CSI_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE0,
+                                    &pCSI_PipeConfig) != HAL_OK)
+  {
+    return BSP_CAM_ERROR;
+  }
+
+  pCSI_Config.PHYBitrate = DCMIPP_CSI_PHY_BT_80;
+  pCSI_Config.DataLaneMapping = DCMIPP_CSI_PHYSICAL_DATA_LANES;
+  pCSI_Config.NumberOfLanes = DCMIPP_CSI_ONE_DATA_LANE;
+  if (HAL_DCMIPP_CSI_SetConfig(&hdcmipp, &pCSI_Config) != HAL_OK)
+  {
+    return BSP_CAM_ERROR;
+  }
+
+  pPipeConfig.FrameRate = DCMIPP_FRAME_RATE_ALL;
+  pPipeConfig.PixelPipePitch = CAMERA_PREVIEW_WIDTH * 2U;
+  pPipeConfig.PixelPackerFormat = CAMERA_PF_RGB565;
+  if (HAL_DCMIPP_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE0,
+                                &pPipeConfig) != HAL_OK)
+  {
+    return BSP_CAM_ERROR;
+  }
+
+  HAL_DCMIPP_CSI_SetVCConfig(&hdcmipp, 0U, DCMIPP_CSI_DT_BPP6);
+
+  if (HAL_DCMIPP_CSI_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE1,
+                                    &pCSI_PipeConfig) != HAL_OK)
+  {
+    return BSP_CAM_ERROR;
+  }
+
+  pPipeConfig.PixelPipePitch = CAMERA_AI_WIDTH * 3U;
+  pPipeConfig.PixelPackerFormat = CAMERA_PF_RGB888;
+  if (HAL_DCMIPP_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE1,
+                                &pPipeConfig) != HAL_OK)
+  {
+    return BSP_CAM_ERROR;
+  }
+
+  pCSI_PipeConfig.DataTypeIDB = DCMIPP_DT_RGB565;
+  if (HAL_DCMIPP_CSI_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE2,
+                                    &pCSI_PipeConfig) != HAL_OK)
+  {
+    return BSP_CAM_ERROR;
+  }
+
+  pPipeConfig.FrameRate = DCMIPP_FRAME_RATE_1_OVER_4;
+  pPipeConfig.PixelPipePitch = 10U;
+  if (HAL_DCMIPP_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE2,
+                                &pPipeConfig) != HAL_OK)
+  {
+    return BSP_CAM_ERROR;
+  }
+
+  camera_opened = 1U;
   return BSP_CAM_OK;
 }
 
@@ -82,6 +154,7 @@ BSP_Camera_StatusTypeDef BSP_Camera_DeInit(void)
 
   HAL_DCMIPP_DeInit(&hdcmipp);
   CameraCtx.State = CAMERA_STATE_RESET;
+  camera_opened = 0U;
 
   return BSP_CAM_OK;
 }
@@ -231,6 +304,11 @@ void BSP_Camera_HW_Reset(void)
   /* Release reset */
   HAL_GPIO_WritePin(CAMERA_NRST_PORT, CAMERA_NRST_PIN, GPIO_PIN_SET);
   HAL_Delay(50);  /* Wait for sensor PLL lock */
+}
+
+DCMIPP_HandleTypeDef *BSP_Camera_GetHandle(void)
+{
+  return &hdcmipp;
 }
 
 /* HAL Callbacks -------------------------------------------------------------*/

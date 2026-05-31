@@ -38,9 +38,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-/* External ETH handle from CubeMX main.c */
-extern ETH_HandleTypeDef heth1;
-
 /* Semaphore to signal RX task from ISR */
 static osSemaphoreId_t ethRxSemaphore = NULL;
 static uint32_t ethRxAllocIndex = 0;
@@ -122,6 +119,7 @@ void ethernetif_check_link(struct netif *netif)
   BSP_ETH_LinkInfo_t link_info;
   BSP_ETH_LinkStateTypeDef link_state;
   ETH_MACConfigTypeDef mac_config;
+  ETH_HandleTypeDef *heth = BSP_ETH_GetHandle();
 
   link_state = BSP_ETH_GetLinkState(&link_info);
 
@@ -130,13 +128,13 @@ void ethernetif_check_link(struct netif *netif)
     if (!netif_is_link_up(netif))
     {
       /* Link just came up — update MAC config with negotiated speed/duplex */
-      HAL_ETH_GetMACConfig(&heth1, &mac_config);
+      HAL_ETH_GetMACConfig(heth, &mac_config);
       mac_config.Speed      = link_info.Speed;
       mac_config.DuplexMode = link_info.DuplexMode;
-      HAL_ETH_SetMACConfig(&heth1, &mac_config);
+      HAL_ETH_SetMACConfig(heth, &mac_config);
 
       /* Start ETH */
-      HAL_ETH_Start_IT(&heth1);
+      HAL_ETH_Start_IT(heth);
 
       netif_set_link_up(netif);
       netif_set_up(netif);
@@ -147,7 +145,7 @@ void ethernetif_check_link(struct netif *netif)
     if (netif_is_link_up(netif))
     {
       /* Link went down */
-      HAL_ETH_Stop_IT(&heth1);
+      HAL_ETH_Stop_IT(heth);
       netif_set_link_down(netif);
       netif_set_down(netif);
     }
@@ -188,11 +186,12 @@ osStatus_t ethernetif_wait_rx(uint32_t timeout_ms)
 static void low_level_init(struct netif *netif)
 {
   uint32_t idx;
+  ETH_HandleTypeDef *heth = BSP_ETH_GetHandle();
 
   /* Copy MAC address from ETH handle */
   for (idx = 0; idx < ETH_HWADDR_LEN; idx++)
   {
-    netif->hwaddr[idx] = heth1.Init.MACAddr[idx];
+    netif->hwaddr[idx] = heth->Init.MACAddr[idx];
   }
 
   /*
@@ -200,13 +199,11 @@ static void low_level_init(struct netif *netif)
    * RX buffers are managed via the RxAllocateCallback mechanism
    * or by pre-filling the RX DMA descriptors in the ETH init.
    *
-   * The CubeMX-generated MX_ETH1_Init() already sets up DMA
-   * descriptors at the addresses specified in main.c
-   * (DMARxDscrTab / DMATxDscrTab).
+   * BSP_ETH_Open() owns the ETH handle and descriptor tables.
    *
    * For custom buffer allocation, register callbacks:
-   *   HAL_ETH_RegisterRxAllocateCallback(&heth1, ...);
-   *   HAL_ETH_RegisterRxLinkCallback(&heth1, ...);
+   *   HAL_ETH_RegisterRxAllocateCallback(BSP_ETH_GetHandle(), ...);
+   *   HAL_ETH_RegisterRxLinkCallback(BSP_ETH_GetHandle(), ...);
    */
   (void)eth_rx_buffer;  /* Reserved for future use */
   (void)idx;
@@ -259,7 +256,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
   /* Transmit */
   pbuf_ref(p);  /* Keep reference until TX complete */
 
-  if (HAL_ETH_Transmit_IT(&heth1, &tx_config) != HAL_OK)
+  if (HAL_ETH_Transmit_IT(BSP_ETH_GetHandle(), &tx_config) != HAL_OK)
   {
     pbuf_free(p);
     errval = ERR_IF;
@@ -281,13 +278,15 @@ static struct pbuf *low_level_input(struct netif *netif)
   (void)netif;
 
   /* Check if a frame was received */
-  if (HAL_ETH_ReadData(&heth1, &app_buff) != HAL_OK)
+  ETH_HandleTypeDef *heth = BSP_ETH_GetHandle();
+
+  if (HAL_ETH_ReadData(heth, &app_buff) != HAL_OK)
   {
     return NULL;
   }
 
   /* Get frame length from RX descriptor list (channel 0) */
-  frame_length = heth1.RxDescList[ETH_DMA_CHANNEL].RxDataLength;
+  frame_length = heth->RxDescList[ETH_DMA_CHANNEL].RxDataLength;
 
   if ((frame_length > 0) && (app_buff != NULL))
   {

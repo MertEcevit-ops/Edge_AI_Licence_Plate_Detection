@@ -22,6 +22,9 @@
 #include "stm32n6xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp_camera.h"
+#include "bsp_eth.h"
+#include "bsp_lcd.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,9 +60,6 @@
 /* External variables --------------------------------------------------------*/
 
 /* USER CODE BEGIN EV */
-extern ETH_HandleTypeDef heth1;
-extern DCMIPP_HandleTypeDef hdcmipp;
-
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -182,7 +182,7 @@ void DebugMon_Handler(void)
   */
 void ETH1_IRQHandler(void)
 {
-  HAL_ETH_IRQHandler(&heth1);
+  HAL_ETH_IRQHandler(BSP_ETH_GetHandle());
 }
 
 /**
@@ -190,7 +190,23 @@ void ETH1_IRQHandler(void)
   */
 void DCMIPP_IRQHandler(void)
 {
-  HAL_DCMIPP_IRQHandler(&hdcmipp);
+  HAL_DCMIPP_IRQHandler(BSP_Camera_GetHandle());
+}
+
+/**
+  * @brief  LTDC global interrupt handler (line event / error).
+  */
+void LTDC_IRQHandler(void)
+{
+  HAL_LTDC_IRQHandler(BSP_LCD_GetHandle());
+}
+
+/**
+  * @brief  LTDC error interrupt handler.
+  */
+void LTDC_ER_IRQHandler(void)
+{
+  HAL_LTDC_IRQHandler(BSP_LCD_GetHandle());
 }
 
 /* USER CODE END 1 */
