@@ -1,8 +1,8 @@
-# Project Progress Report #3 Draft
+# Project Final Implementation Report
 
 ## Embedded Bring-Up Progress
 
-This iteration focuses on turning the STM32N6570-DK hardware peripherals into a runnable edge pipeline and cleaning the project structure according to the driver/board-abstraction feedback. The previous codebase kept low-level HAL handles and `MX_*_Init()` functions in `main.c`; Progress #3 moves those responsibilities into BSP driver `Open` functions and keeps `main.c` as a thin board/application bootstrap.
+This iteration turns the STM32N6570-DK hardware peripherals into a runnable edge pipeline and cleans the project structure according to the driver/board-abstraction feedback. The previous codebase kept low-level HAL handles and `MX_*_Init()` functions in `main.c`; the final implementation moves those responsibilities into BSP driver `Open` functions and keeps `main.c` as a thin board/application bootstrap.
 
 ## Implemented Code Changes
 
@@ -18,6 +18,9 @@ This iteration focuses on turning the STM32N6570-DK hardware peripherals into a 
 - Replaced the empty default FreeRTOS task with a real `AppStartup` task that starts the ALPR task graph and exits.
 - Added `security_layer` with SHA-256 integrity and AES-256-CBC payload encryption before network transmission.
 - Added the host TCP receiver in `host_app/secure_alpr_receiver.py` for receive, decrypt, SHA-256 verification, optional CNN OCR and JSONL logging.
+- Integrated the generated `alpr2` STM32Cube.AI/ATON detector in `DetectionTask`, including RGB888-to-float preprocessing, YOLO output parsing, confidence filtering and NMS.
+- Reworked the former OCR stub into a host OCR handoff: each detected ROI is cropped to a 96x32 PGM image, base64-encoded into the encrypted JSON payload and consumed by the host receiver.
+- Increased the FreeRTOS heap to fit the complete task graph, queues and network stack.
 - Moved RGB565 color constants from `app_tasks.c` into the LCD BSP header.
 - Enabled DCMIPP and ETH1 IRQ routing to `HAL_DCMIPP_IRQHandler()` and `HAL_ETH_IRQHandler()`.
 
@@ -33,7 +36,7 @@ Runtime control path:
 `IWDG -> bsp_watchdog -> WatchdogTask -> HAL_IWDG_Refresh()`
 
 Secure transport path:
-`OCR result -> security_layer SHA-256 -> AES-256-CBC packet -> LwIP TCP -> host_app receiver -> decrypt/verify/log`
+`Plate ROI -> PGM crop/base64 JSON -> security_layer SHA-256 -> AES-256-CBC packet -> LwIP TCP -> host_app receiver -> decrypt/verify/optional CNN OCR/log`
 
 ## Important Fixes
 
@@ -51,9 +54,9 @@ Host-side checks:
 - `python3 -m py_compile host_app/secure_alpr_receiver.py`
 - AES-256 decrypt validation against a known NIST test vector
 
-## Remaining Work
+## Final Demo Checklist
 
 - Test DHCP by pinging the board from the host PC.
 - Verify live camera frame-ready interrupts on the target board.
-- Replace placeholder Detection/OCR sections with final STM32Cube.AI post-processing or route cropped-plate image payloads to the host CNN OCR path.
-- Record final end-to-end demo video and include host log output in the final report.
+- Run the host receiver with `--ocr-model path/to/tiny_ocr_model.onnx` if the TinyOCR ONNX export is available.
+- Record the final end-to-end demo video and include representative `host_app/alpr_events.jsonl` lines.

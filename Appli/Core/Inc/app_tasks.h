@@ -7,8 +7,8 @@
   *  ===========================
   *
   *  ┌──────────┐   MsgQ    ┌───────────┐   MsgQ    ┌──────────┐
-  *  │ Camera   │ ────────> │ Detection │ ────────> │   OCR    │
-  *  │ Capture  │  (frame)  │ (YOLO/NPU)│  (ROI)   │  (NPU)   │
+  *  │ Camera   │ ────────> │ Detection │ ────────> │ OCR      │
+  *  │ Capture  │  (frame)  │ (YOLO/NPU)│  (ROI)   │ handoff  │
   *  └──────────┘           └───────────┘           └──────────┘
   *       │                      │                       │
   *       │ (preview fb)         │ (bbox overlay)        │ MsgQ
@@ -81,6 +81,7 @@ typedef struct
 typedef struct
 {
   uint32_t frame_id;       /**< Source frame ID for traceability */
+  uint32_t timestamp_ms;   /**< Original capture timestamp */
   uint32_t fb_addr;        /**< Source framebuffer address */
   BBox_t   bbox;           /**< Bounding box of the detected plate */
   uint8_t  roi_index;      /**< ROI index within this frame (0..N) */
@@ -94,9 +95,11 @@ typedef struct
 {
   uint32_t frame_id;                         /**< Source frame ID */
   uint32_t timestamp_ms;                     /**< Original capture timestamp */
+  uint32_t fb_addr;                          /**< Source AI framebuffer address */
   char     plate_text[MAX_PLATE_STRING_LEN]; /**< Null-terminated plate string */
   float    ocr_confidence;                   /**< OCR recognition confidence */
   BBox_t   bbox;                             /**< Plate location (for logging) */
+  uint8_t  roi_index;                        /**< ROI index within source frame */
 } PlateResultMsg_t;
 
 /**
@@ -120,8 +123,8 @@ typedef struct
  * Rationale:
  * - CameraCapture:   Light — just manages DMA/DCMIPP triggers
  * - Detection:       Large — YOLO pre/post-processing on CPU, NPU invocation
- * - OCR:             Large — OCR pre/post-processing, character decoding
- * - CryptoTransmit:  Medium — SHA-256 / AES-256 context, LwIP send
+ * - OCR:             Medium — ROI handoff to secure host OCR
+ * - CryptoTransmit:  Medium — SHA-256 / AES-256 context, crop encode, LwIP send
  * - EthInput:        Medium — pbuf processing
  * - EthLink:         Small — PHY register polling
  * - Display:         Medium — framebuffer drawing operations

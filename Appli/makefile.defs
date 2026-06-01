@@ -3,3 +3,4 @@
 # Appending here ensures LwIP .o files reach the linker command line.
 
 USER_OBJS += $(LWIP_OBJS) $(EXTRA_OBJS)
+LIBS += ../../Middlewares/ST/AI/Lib/NetworkRuntime1020_CM55_GCC.a

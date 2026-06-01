@@ -135,7 +135,7 @@ uint32_t get_ll_element_size(const LL_Buffer_InfoTypeDef *aton_buf)
 
 static NN_Instance_TypeDef* _get_nn_instance(int idx)
 {
-  if (idx > 1)
+  if ((idx < 0) || (idx >= NPU_NETWORK_NUMBER))
     return NULL;
 
 #if defined(USE_RELOC_MODE) && USE_RELOC_MODE == 1

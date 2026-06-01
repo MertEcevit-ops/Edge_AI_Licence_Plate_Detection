@@ -23,8 +23,9 @@ MAGIC = 0x52504C41
 VERSION = 1
 KEY = b"ALPR-ELE529-SECURE-AES256-KEY!01"
 HEADER = struct.Struct("<IHHIIIHH16s32s")
-MAX_CIPHERTEXT_SIZE = 176
 AES_BLOCK_SIZE = 16
+MAX_PLAINTEXT_SIZE = 5120
+MAX_CIPHERTEXT_SIZE = MAX_PLAINTEXT_SIZE + AES_BLOCK_SIZE
 
 S_BOX = (
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B,
@@ -287,6 +288,9 @@ def read_packet(conn: socket.socket) -> dict[str, Any]:
         raise ValueError(f"plaintext length mismatch: {len(plaintext)} != {plaintext_len}")
 
     integrity_ok = hashlib.sha256(plaintext).digest() == digest
+    if not integrity_ok:
+        raise ValueError("sha256 integrity check failed")
+
     try:
         payload: Any = json.loads(plaintext.decode("utf-8"))
     except json.JSONDecodeError:
