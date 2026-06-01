@@ -320,7 +320,9 @@ __STATIC_INLINE bool port_io_read(uint8_t *buff, int count)
 #define port_dwt_reset()                  ARM_PMU_CYCCNT_Reset()
 #define port_dwt_get_cycles()             ARM_PMU_Get_CCNTR()
 
+#if !defined(UartHandle)
 extern UART_HandleTypeDef UartHandle;
+#endif
 
 __STATIC_INLINE bool port_io_get(uint8_t *c, uint32_t timeout)
 {
@@ -548,7 +550,9 @@ __STATIC_INLINE bool port_io_read(uint8_t *buff, int count)
 #define port_dwt_reset()                  DWT->CYCCNT = 0
 #define port_dwt_get_cycles()             DWT->CYCCNT
     
+#if !defined(UartHandle)
 extern UART_HandleTypeDef UartHandle;
+#endif
 
 __STATIC_INLINE bool port_io_get(uint8_t *c, uint32_t timeout)
 {

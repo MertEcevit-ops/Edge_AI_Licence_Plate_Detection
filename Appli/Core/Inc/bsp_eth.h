@@ -28,6 +28,25 @@ extern "C" {
 
 /* Exported defines ----------------------------------------------------------*/
 
+#ifndef ETH_MDINT_Pin
+#define ETH_MDINT_Pin GPIO_PIN_3
+#define ETH_MDINT_GPIO_Port GPIOD
+#define ETH_CLK_Pin GPIO_PIN_5
+#define ETH_CLK_GPIO_Port GPIOF
+#define ETH_RXD2_Pin GPIO_PIN_8
+#define ETH_RXD2_GPIO_Port GPIOF
+#define ETH_CLK125_Pin GPIO_PIN_2
+#define ETH_CLK125_GPIO_Port GPIOF
+#define ETH_RXD3_Pin GPIO_PIN_9
+#define ETH_RXD3_GPIO_Port GPIOF
+#define ETH_TXD3_Pin GPIO_PIN_4
+#define ETH_TXD3_GPIO_Port GPIOG
+#define ETH_TX2_Pin GPIO_PIN_3
+#define ETH_TX2_GPIO_Port GPIOG
+#define ETH_GTX_CLK_Pin GPIO_PIN_0
+#define ETH_GTX_CLK_GPIO_Port GPIOF
+#endif
+
 /** @defgroup BSP_ETH_PHY_Defines LAN8742 PHY Register Map
   * @{
   */
@@ -127,6 +146,7 @@ typedef struct
   */
 BSP_ETH_StatusTypeDef BSP_ETH_PHY_Init(void);
 BSP_ETH_StatusTypeDef BSP_ETH_Open(void);
+BSP_ETH_StatusTypeDef BSP_ETH_Close(void);
 
 /**
   * @brief  Get current link state.

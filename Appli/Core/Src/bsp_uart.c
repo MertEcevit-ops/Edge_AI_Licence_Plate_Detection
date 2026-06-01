@@ -7,8 +7,7 @@
 
 #include "bsp_uart.h"
 
-UART_HandleTypeDef huart1;
-
+static UART_HandleTypeDef huart1;
 static uint8_t uart_opened = 0U;
 
 BSP_UART_StatusTypeDef BSP_UART_Open(void)
@@ -53,6 +52,22 @@ BSP_UART_StatusTypeDef BSP_UART_Open(void)
   }
 
   uart_opened = 1U;
+  return BSP_UART_OK;
+}
+
+BSP_UART_StatusTypeDef BSP_UART_Close(void)
+{
+  if (uart_opened == 0U)
+  {
+    return BSP_UART_OK;
+  }
+
+  if (HAL_UART_DeInit(&huart1) != HAL_OK)
+  {
+    return BSP_UART_ERROR;
+  }
+
+  uart_opened = 0U;
   return BSP_UART_OK;
 }
 

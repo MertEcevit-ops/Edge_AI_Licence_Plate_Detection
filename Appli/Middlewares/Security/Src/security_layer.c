@@ -71,6 +71,9 @@ Security_StatusTypeDef SecurityLayer_Seal(const uint8_t *plaintext,
                                            uint32_t timestamp_ms,
                                            SecurityPacket_t *packet)
 {
+  Security_StatusTypeDef status;
+  uint16_t ciphertext_len;
+
   if ((plaintext == NULL) || (packet == NULL))
   {
     return SECURITY_INVALID_PARAM;
@@ -106,8 +109,14 @@ Security_StatusTypeDef SecurityLayer_Seal(const uint8_t *plaintext,
     return SECURITY_ERROR;
   }
 
-  return AES256_CBC_Encrypt(plaintext, plaintext_len, packet->iv,
-                            packet->ciphertext, &packet->ciphertext_len);
+  status = AES256_CBC_Encrypt(plaintext, plaintext_len, packet->iv,
+                              packet->ciphertext, &ciphertext_len);
+  if (status == SECURITY_OK)
+  {
+    packet->ciphertext_len = ciphertext_len;
+  }
+
+  return status;
 }
 
 size_t SecurityLayer_GetPacketWireSize(const SecurityPacket_t *packet)

@@ -23,6 +23,7 @@ typedef enum
 } BSP_Security_StatusTypeDef;
 
 BSP_Security_StatusTypeDef BSP_Security_Open(void);
+BSP_Security_StatusTypeDef BSP_Security_Close(void);
 BSP_Security_StatusTypeDef BSP_Security_SHA256(const uint8_t *data,
                                                 size_t data_len,
                                                 uint8_t digest[32]);

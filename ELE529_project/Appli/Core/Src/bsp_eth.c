@@ -69,6 +69,22 @@ BSP_ETH_StatusTypeDef BSP_ETH_Open(void)
   return BSP_ETH_OK;
 }
 
+BSP_ETH_StatusTypeDef BSP_ETH_Close(void)
+{
+  if (eth_opened == 0U)
+  {
+    return BSP_ETH_OK;
+  }
+
+  if (HAL_ETH_DeInit(&heth1) != HAL_OK)
+  {
+    return BSP_ETH_ERROR;
+  }
+
+  eth_opened = 0U;
+  return BSP_ETH_OK;
+}
+
 /**
   * @brief  Initialize the Ethernet PHY (soft reset + auto-negotiation).
   */

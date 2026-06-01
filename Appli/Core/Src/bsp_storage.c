@@ -7,8 +7,7 @@
 
 #include "bsp_storage.h"
 
-XSPI_HandleTypeDef hxspi1;
-
+static XSPI_HandleTypeDef hxspi1;
 static CACHEAXI_HandleTypeDef hcacheaxi;
 static SD_HandleTypeDef hsd1;
 static uint8_t storage_opened = 0U;
@@ -41,6 +40,34 @@ BSP_Storage_StatusTypeDef BSP_Storage_Open(void)
 
   storage_opened = 1U;
   return BSP_STORAGE_OK;
+}
+
+BSP_Storage_StatusTypeDef BSP_Storage_Close(void)
+{
+  BSP_Storage_StatusTypeDef status = BSP_STORAGE_OK;
+
+  if (storage_opened == 0U)
+  {
+    return BSP_STORAGE_OK;
+  }
+
+  if (HAL_CACHEAXI_DeInit(&hcacheaxi) != HAL_OK)
+  {
+    status = BSP_STORAGE_ERROR;
+  }
+
+  if (HAL_XSPI_DeInit(&hxspi1) != HAL_OK)
+  {
+    status = BSP_STORAGE_ERROR;
+  }
+
+  if (HAL_SD_DeInit(&hsd1) != HAL_OK)
+  {
+    status = BSP_STORAGE_ERROR;
+  }
+
+  storage_opened = 0U;
+  return status;
 }
 
 XSPI_HandleTypeDef *BSP_Storage_GetXSPIHandle(void)

@@ -32,6 +32,15 @@ BSP_Watchdog_StatusTypeDef BSP_Watchdog_Open(void)
   return BSP_WATCHDOG_OK;
 }
 
+BSP_Watchdog_StatusTypeDef BSP_Watchdog_Close(void)
+{
+  /*
+   * IWDG cannot be stopped once started on STM32. Keep this API so
+   * BSP_Board_Close() has a complete reverse-order shutdown surface.
+   */
+  return BSP_WATCHDOG_OK;
+}
+
 BSP_Watchdog_StatusTypeDef BSP_Watchdog_Refresh(void)
 {
   if (BSP_Watchdog_Open() != BSP_WATCHDOG_OK)

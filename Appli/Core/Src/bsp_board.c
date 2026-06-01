@@ -6,6 +6,9 @@
   */
 
 #include "bsp_board.h"
+#include "bsp_camera.h"
+#include "bsp_eth.h"
+#include "bsp_lcd.h"
 #include "bsp_security.h"
 #include "bsp_storage.h"
 #include "bsp_uart.h"
@@ -35,7 +38,64 @@ BSP_Board_StatusTypeDef BSP_Board_Open(void)
     return BSP_BOARD_ERROR;
   }
 
+  if (BSP_LCD_Init() != BSP_LCD_OK)
+  {
+    return BSP_BOARD_ERROR;
+  }
+
+  if (BSP_Camera_Init() != BSP_CAM_OK)
+  {
+    return BSP_BOARD_ERROR;
+  }
+
+  if (BSP_ETH_Open() != BSP_ETH_OK)
+  {
+    return BSP_BOARD_ERROR;
+  }
+
   return BSP_BOARD_OK;
+}
+
+BSP_Board_StatusTypeDef BSP_Board_Close(void)
+{
+  BSP_Board_StatusTypeDef status = BSP_BOARD_OK;
+
+  if (BSP_ETH_Close() != BSP_ETH_OK)
+  {
+    status = BSP_BOARD_ERROR;
+  }
+
+  if (BSP_Camera_DeInit() != BSP_CAM_OK)
+  {
+    status = BSP_BOARD_ERROR;
+  }
+
+  if (BSP_LCD_DeInit() != BSP_LCD_OK)
+  {
+    status = BSP_BOARD_ERROR;
+  }
+
+  if (BSP_Watchdog_Close() != BSP_WATCHDOG_OK)
+  {
+    status = BSP_BOARD_ERROR;
+  }
+
+  if (BSP_UART_Close() != BSP_UART_OK)
+  {
+    status = BSP_BOARD_ERROR;
+  }
+
+  if (BSP_Security_Close() != BSP_SECURITY_OK)
+  {
+    status = BSP_BOARD_ERROR;
+  }
+
+  if (BSP_Storage_Close() != BSP_STORAGE_OK)
+  {
+    status = BSP_BOARD_ERROR;
+  }
+
+  return status;
 }
 
 void BSP_Board_GPIO_Open(void)

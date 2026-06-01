@@ -21,6 +21,7 @@ typedef enum
 } BSP_Watchdog_StatusTypeDef;
 
 BSP_Watchdog_StatusTypeDef BSP_Watchdog_Open(void);
+BSP_Watchdog_StatusTypeDef BSP_Watchdog_Close(void);
 BSP_Watchdog_StatusTypeDef BSP_Watchdog_Refresh(void);
 IWDG_HandleTypeDef *BSP_Watchdog_GetHandle(void);
 

@@ -22,10 +22,11 @@
  extern "C" {
 #endif
 #include "main.h"
+#include "bsp_uart.h"
 #include "stm32n6xx.h"
 #include "app_x-cube-ai.h"
 #include "constants_ai.h"
-#define UartHandle huart1
+#define UartHandle (*BSP_UART_GetHandle())
 #define MX_UARTx_Init MX_USART1_UART_Init
 void MX_USART1_UART_Init(void);
 #ifdef __cplusplus

@@ -14,6 +14,16 @@ extern "C" {
 
 #include "main.h"
 
+#ifndef VCP_TX_Pin
+#define VCP_TX_Pin GPIO_PIN_5
+#define VCP_TX_GPIO_Port GPIOE
+#endif
+
+#ifndef VCP_RX_Pin
+#define VCP_RX_Pin GPIO_PIN_6
+#define VCP_RX_GPIO_Port GPIOE
+#endif
+
 typedef enum
 {
   BSP_UART_OK    = 0,
@@ -21,6 +31,7 @@ typedef enum
 } BSP_UART_StatusTypeDef;
 
 BSP_UART_StatusTypeDef BSP_UART_Open(void);
+BSP_UART_StatusTypeDef BSP_UART_Close(void);
 UART_HandleTypeDef *BSP_UART_GetHandle(void);
 
 #ifdef __cplusplus

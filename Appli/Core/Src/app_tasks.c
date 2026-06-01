@@ -19,6 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "app_tasks.h"
+#include "app_display.h"
 #include "bsp_lcd.h"
 #include "bsp_camera.h"
 #include "bsp_eth.h"
@@ -101,11 +102,6 @@ static void DisplayTask(void *argument);
 static void WatchdogTask(void *argument);
 
 static void Camera_FrameReadyCb(BSP_Camera_PipeType_t pipe, uint32_t fb_addr);
-static void Display_DrawBringupFrame(const DisplayOverlay_t *overlay);
-static void Display_DrawRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h,
-                             uint16_t color);
-static void Display_DrawFrameCounter(uint32_t frame_id);
-static void Display_ClearBackBuffer(uint16_t color);
 static size_t Crypto_BuildPlaintext(const PlateResultMsg_t *result,
                                     uint8_t *buffer, size_t buffer_size);
 static void Crypto_SendSecurePacket(const SecurityPacket_t *packet);
@@ -153,14 +149,12 @@ static const osThreadAttr_t watchdogTask_attr = {
 
 void AppTasks_Init(void)
 {
-  /* ── 1. Initialize BSP Peripherals ────────────────────────────────────── */
+  /* ── 1. BSP peripherals are opened by BSP_Board_Open() before FreeRTOS. ─ */
 
-  /* LCD — display startup screen */
-  BSP_LCD_Init();
+  /* Display startup screen */
   BSP_LCD_Clear(LCD_LAYER_0, RGB565_BLUE);
 
-  /* Camera — configure DCMIPP pipes */
-  BSP_Camera_Init();
+  /* Camera callback registration needs RTOS objects created in this context. */
   BSP_Camera_RegisterCallback(Camera_FrameReadyCb);
 
   /* ── 2. Create Synchronization Objects ────────────────────────────────── */
@@ -522,7 +516,10 @@ static void DisplayTask(void *argument)
       osMutexRelease(OverlayMutex);
     }
 
-    Display_DrawBringupFrame(&local_overlay);
+    AppDisplay_DrawBringupFrame(&local_overlay,
+                                camera_last_frame_tick,
+                                camera_capture_started,
+                                camera_timeout_count);
     BSP_LCD_SwapBuffers(LCD_LAYER_0);
 
     osDelay(APP_DISPLAY_TEST_PERIOD_MS);
@@ -566,99 +563,6 @@ static void Camera_FrameReadyCb(BSP_Camera_PipeType_t pipe, uint32_t fb_addr)
     {
       osSemaphoreRelease(camFrameSemaphore);
     }
-  }
-}
-
-static void Display_DrawBringupFrame(const DisplayOverlay_t *overlay)
-{
-  const uint16_t bars[] = {
-    RGB565_RED, RGB565_GREEN, RGB565_BLUE, RGB565_YELLOW,
-    RGB565_CYAN, RGB565_MAGENTA, RGB565_WHITE, RGB565_GRAY
-  };
-  uint32_t now = HAL_GetTick();
-  uint8_t camera_live = ((camera_last_frame_tick != 0U) &&
-                         ((now - camera_last_frame_tick) < 1000U)) ? 1U : 0U;
-
-  Display_ClearBackBuffer(RGB565_BLACK);
-
-  for (uint32_t i = 0; i < (sizeof(bars) / sizeof(bars[0])); i++)
-  {
-    BSP_LCD_FillRect(LCD_LAYER_0, i * 80U, 0U, 80U, 64U, bars[i]);
-  }
-
-  BSP_LCD_FillRect(LCD_LAYER_0, 0U, 70U, LCD_WIDTH, 4U,
-                   camera_live ? RGB565_GREEN : RGB565_RED);
-  BSP_LCD_FillRect(LCD_LAYER_0, 0U, 78U, camera_capture_started ? 160U : 80U,
-                   12U, camera_capture_started ? RGB565_GREEN : RGB565_YELLOW);
-
-  Display_DrawFrameCounter(overlay->frame_id);
-
-  for (uint8_t i = 0; i < overlay->num_detections; i++)
-  {
-    const BBox_t *bb = &overlay->detections[i];
-    uint32_t sx = ((uint32_t)bb->x * LCD_WIDTH) / CAMERA_AI_WIDTH;
-    uint32_t sy = ((uint32_t)bb->y * LCD_HEIGHT) / CAMERA_AI_HEIGHT;
-    uint32_t sw = ((uint32_t)bb->w * LCD_WIDTH) / CAMERA_AI_WIDTH;
-    uint32_t sh = ((uint32_t)bb->h * LCD_HEIGHT) / CAMERA_AI_HEIGHT;
-    uint16_t color = camera_live ? RGB565_GREEN : RGB565_YELLOW;
-
-    Display_DrawRect(sx, sy, sw, sh, color);
-  }
-
-  /* Moving pulse proves DisplayTask is alive even before camera/link tests. */
-  uint32_t pulse_x = (HAL_GetTick() / APP_DISPLAY_TEST_PERIOD_MS) %
-                     (LCD_WIDTH - 48U);
-  BSP_LCD_FillRect(LCD_LAYER_0, pulse_x, LCD_HEIGHT - 36U, 48U, 20U,
-                   RGB565_CYAN);
-}
-
-static void Display_DrawRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h,
-                             uint16_t color)
-{
-  if ((x >= LCD_WIDTH) || (y >= LCD_HEIGHT) || (w == 0U) || (h == 0U))
-  {
-    return;
-  }
-
-  if ((x + w) > LCD_WIDTH)
-  {
-    w = LCD_WIDTH - x;
-  }
-
-  if ((y + h) > LCD_HEIGHT)
-  {
-    h = LCD_HEIGHT - y;
-  }
-
-  BSP_LCD_FillRect(LCD_LAYER_0, x, y, w, 3U, color);
-  BSP_LCD_FillRect(LCD_LAYER_0, x, y + h - 1U, w, 3U, color);
-  BSP_LCD_FillRect(LCD_LAYER_0, x, y, 3U, h, color);
-  BSP_LCD_FillRect(LCD_LAYER_0, x + w - 1U, y, 3U, h, color);
-}
-
-static void Display_DrawFrameCounter(uint32_t frame_id)
-{
-  for (uint32_t bit = 0; bit < 16U; bit++)
-  {
-    uint16_t color = ((frame_id >> bit) & 1U) ? RGB565_GREEN : RGB565_GRAY;
-    BSP_LCD_FillRect(LCD_LAYER_0, 16U + (bit * 18U), 96U, 14U, 28U, color);
-  }
-
-  for (uint32_t bit = 0; bit < 8U; bit++)
-  {
-    uint16_t color = ((camera_timeout_count >> bit) & 1U) ?
-                     RGB565_RED : RGB565_GRAY;
-    BSP_LCD_FillRect(LCD_LAYER_0, 16U + (bit * 18U), 132U, 14U, 14U, color);
-  }
-}
-
-static void Display_ClearBackBuffer(uint16_t color)
-{
-  uint16_t *fb = BSP_LCD_GetBackBuffer(LCD_LAYER_0);
-
-  for (uint32_t i = 0; i < (LCD_WIDTH * LCD_HEIGHT); i++)
-  {
-    fb[i] = color;
   }
 }
 

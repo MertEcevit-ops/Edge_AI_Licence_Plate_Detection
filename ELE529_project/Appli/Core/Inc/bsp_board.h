@@ -14,6 +14,16 @@ extern "C" {
 
 #include "main.h"
 
+#ifndef OSC_IN_Pin
+#define OSC_IN_Pin GPIO_PIN_0
+#define OSC_IN_GPIO_Port GPIOH
+#endif
+
+#ifndef OSC_OUT_Pin
+#define OSC_OUT_Pin GPIO_PIN_1
+#define OSC_OUT_GPIO_Port GPIOH
+#endif
+
 typedef enum
 {
   BSP_BOARD_OK    = 0,
@@ -21,6 +31,7 @@ typedef enum
 } BSP_Board_StatusTypeDef;
 
 BSP_Board_StatusTypeDef BSP_Board_Open(void);
+BSP_Board_StatusTypeDef BSP_Board_Close(void);
 void BSP_Board_GPIO_Open(void);
 
 #ifdef __cplusplus

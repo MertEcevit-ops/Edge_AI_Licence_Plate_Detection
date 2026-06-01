@@ -42,6 +42,34 @@ BSP_Security_StatusTypeDef BSP_Security_Open(void)
   return BSP_SECURITY_OK;
 }
 
+BSP_Security_StatusTypeDef BSP_Security_Close(void)
+{
+  BSP_Security_StatusTypeDef status = BSP_SECURITY_OK;
+
+  if (security_opened == 0U)
+  {
+    return BSP_SECURITY_OK;
+  }
+
+  if (HAL_HASH_DeInit(&hhash) != HAL_OK)
+  {
+    status = BSP_SECURITY_ERROR;
+  }
+
+  if (HAL_PKA_DeInit(&hpka) != HAL_OK)
+  {
+    status = BSP_SECURITY_ERROR;
+  }
+
+  if (HAL_RNG_DeInit(&hrng) != HAL_OK)
+  {
+    status = BSP_SECURITY_ERROR;
+  }
+
+  security_opened = 0U;
+  return status;
+}
+
 BSP_Security_StatusTypeDef BSP_Security_SHA256(const uint8_t *data,
                                                 size_t data_len,
                                                 uint8_t digest[32])
