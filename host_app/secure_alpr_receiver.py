@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Secure ALPR host receiver.
 
-Receives STM32 ALPR packets over TCP, decrypts AES-256-CBC payloads, verifies
-the SHA-256 digest, optionally runs host-side CNN OCR on an image payload, and
-writes JSONL logs.
+Receives STM32 ALPR packets over TCP, verifies the HMAC-SHA256 tag over the
+AES-256-CBC ciphertext, decrypts the payload, optionally runs host-side CNN OCR
+on an image payload, and writes JSONL logs.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ import argparse
 import base64
 import datetime as dt
 import hashlib
+import hmac
 import json
 import socket
 import struct
@@ -23,7 +24,10 @@ MAGIC = 0x52504C41
 VERSION = 1
 KEY = b"ALPR-ELE529-SECURE-AES256-KEY!01"
 HEADER = struct.Struct("<IHHIIIHH16s32s")
+COMPACT_MAGIC = 0x414C5052
+COMPACT_HEADER = struct.Struct("<IBBHIII16s")
 AES_BLOCK_SIZE = 16
+AUTH_TAG_SIZE = 32
 MAX_PLAINTEXT_SIZE = 5120
 MAX_CIPHERTEXT_SIZE = MAX_PLAINTEXT_SIZE + AES_BLOCK_SIZE
 
@@ -255,41 +259,40 @@ class CNNOCREngine:
         return chars
 
 
-def read_packet(conn: socket.socket) -> dict[str, Any]:
-    header = recv_exact(conn, HEADER.size)
-    (
-        magic,
-        version,
-        header_size,
-        frame_id,
-        timestamp_ms,
-        plaintext_len,
-        ciphertext_len,
-        _reserved,
-        iv,
-        digest,
-    ) = HEADER.unpack(header)
+def decode_authenticated_payload(
+    *,
+    frame_id: int,
+    timestamp_ms: int,
+    plaintext_len: int,
+    ciphertext: bytes,
+    iv: bytes,
+    auth_tag: bytes,
+    packet_format: str,
+    allow_legacy_sha256: bool,
+) -> dict[str, Any]:
+    if plaintext_len > MAX_PLAINTEXT_SIZE:
+        raise ValueError(f"plaintext too large: {plaintext_len}")
+    if len(ciphertext) > MAX_CIPHERTEXT_SIZE:
+        raise ValueError(f"ciphertext too large: {len(ciphertext)}")
+    if len(auth_tag) != AUTH_TAG_SIZE:
+        raise ValueError(f"invalid auth tag length: {len(auth_tag)}")
 
-    if magic != MAGIC:
-        raise ValueError(f"bad magic: 0x{magic:08x}")
-    if version != VERSION:
-        raise ValueError(f"unsupported packet version: {version}")
-    if header_size < HEADER.size:
-        raise ValueError(f"invalid header size: {header_size}")
-    if ciphertext_len > MAX_CIPHERTEXT_SIZE:
-        raise ValueError(f"ciphertext too large: {ciphertext_len}")
+    expected_tag = hmac.new(KEY, ciphertext, hashlib.sha256).digest()
+    auth_algorithm = "hmac-sha256-ciphertext"
+    auth_ok = hmac.compare_digest(expected_tag, auth_tag)
 
-    if header_size > HEADER.size:
-        recv_exact(conn, header_size - HEADER.size)
+    if not auth_ok and not allow_legacy_sha256:
+        raise ValueError("hmac-sha256 authentication failed")
 
-    ciphertext = recv_exact(conn, ciphertext_len)
     plaintext = aes256_cbc_decrypt(ciphertext, KEY, iv)
     if len(plaintext) != plaintext_len:
         raise ValueError(f"plaintext length mismatch: {len(plaintext)} != {plaintext_len}")
 
-    integrity_ok = hashlib.sha256(plaintext).digest() == digest
-    if not integrity_ok:
-        raise ValueError("sha256 integrity check failed")
+    if not auth_ok:
+        auth_algorithm = "legacy-sha256-plaintext"
+        auth_ok = hmac.compare_digest(hashlib.sha256(plaintext).digest(), auth_tag)
+        if not auth_ok:
+            raise ValueError("hmac-sha256 authentication failed; legacy sha256 check failed")
 
     try:
         payload: Any = json.loads(plaintext.decode("utf-8"))
@@ -299,9 +302,84 @@ def read_packet(conn: socket.socket) -> dict[str, Any]:
     return {
         "frame_id": frame_id,
         "timestamp_ms": timestamp_ms,
-        "integrity_ok": integrity_ok,
+        "integrity_ok": auth_ok,
+        "auth_algorithm": auth_algorithm,
+        "packet_format": packet_format,
         "payload": payload,
     }
+
+
+def read_packet(conn: socket.socket, *, allow_legacy_sha256: bool = False) -> dict[str, Any]:
+    prefix = recv_exact(conn, 8)
+    magic = struct.unpack_from("<I", prefix)[0]
+    canonical_version, canonical_header_size = struct.unpack_from("<HH", prefix, 4)
+
+    if magic == MAGIC and canonical_version == VERSION:
+        if canonical_header_size < HEADER.size:
+            raise ValueError(f"invalid header size: {canonical_header_size}")
+
+        header = prefix + recv_exact(conn, canonical_header_size - len(prefix))
+        (
+            _magic,
+            _version,
+            _header_size,
+            frame_id,
+            timestamp_ms,
+            plaintext_len,
+            ciphertext_len,
+            _reserved,
+            iv,
+            auth_tag,
+        ) = HEADER.unpack(header[: HEADER.size])
+
+        if ciphertext_len > MAX_CIPHERTEXT_SIZE:
+            raise ValueError(f"ciphertext too large: {ciphertext_len}")
+
+        ciphertext = recv_exact(conn, ciphertext_len)
+        return decode_authenticated_payload(
+            frame_id=frame_id,
+            timestamp_ms=timestamp_ms,
+            plaintext_len=plaintext_len,
+            ciphertext=ciphertext,
+            iv=iv,
+            auth_tag=auth_tag,
+            packet_format="canonical-tag-in-header",
+            allow_legacy_sha256=allow_legacy_sha256,
+        )
+
+    compact_version = prefix[4]
+    compact_header_size = prefix[5]
+    if magic in (MAGIC, COMPACT_MAGIC) and compact_version == VERSION:
+        actual_header_size = max(compact_header_size, COMPACT_HEADER.size)
+        header = prefix + recv_exact(conn, actual_header_size - len(prefix))
+        (
+            _magic,
+            _version,
+            _header_size,
+            ciphertext_len,
+            frame_id,
+            timestamp_ms,
+            plaintext_len,
+            iv,
+        ) = COMPACT_HEADER.unpack(header[: COMPACT_HEADER.size])
+
+        if ciphertext_len > MAX_CIPHERTEXT_SIZE:
+            raise ValueError(f"ciphertext too large: {ciphertext_len}")
+
+        ciphertext = recv_exact(conn, ciphertext_len)
+        auth_tag = recv_exact(conn, AUTH_TAG_SIZE)
+        return decode_authenticated_payload(
+            frame_id=frame_id,
+            timestamp_ms=timestamp_ms,
+            plaintext_len=plaintext_len,
+            ciphertext=ciphertext,
+            iv=iv,
+            auth_tag=auth_tag,
+            packet_format="compact-tag-after-ciphertext",
+            allow_legacy_sha256=allow_legacy_sha256,
+        )
+
+    raise ValueError(f"bad magic/version: magic=0x{magic:08x}")
 
 
 def append_log(log_path: Path, event: dict[str, Any]) -> None:
@@ -326,7 +404,7 @@ def serve(args: argparse.Namespace) -> None:
             with conn:
                 received_at = dt.datetime.now(dt.timezone.utc).isoformat()
                 try:
-                    packet = read_packet(conn)
+                    packet = read_packet(conn, allow_legacy_sha256=args.allow_legacy_sha256)
                     payload = packet["payload"]
                     image_b64 = payload.get("plate_image_b64") if isinstance(payload, dict) else None
                     cnn_text, cnn_status = ocr.recognize_b64(image_b64)
@@ -360,6 +438,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--log", default="host_app/alpr_events.jsonl", help="JSONL log path")
     parser.add_argument("--ocr-model", default=None, help="optional TinyOCR ONNX model path")
     parser.add_argument("--backlog", type=int, default=4, help="listen backlog")
+    parser.add_argument(
+        "--allow-legacy-sha256",
+        action="store_true",
+        help="accept pre-HMAC packets that store SHA-256(plaintext) in the tag field",
+    )
     return parser.parse_args()
 
 
